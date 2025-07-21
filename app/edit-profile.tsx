@@ -1,12 +1,14 @@
 import {ThemedText} from '@/components/ThemedText';
 import {ThemedView} from '@/components/ThemedView';
-import {profileMock} from '@/constants/mocks';
-import {UserProfile} from '@/definitions/types';
-import {Stack, router} from 'expo-router';
+import {useAuth} from '@/contexts/AuthContext';
+import {ProfileUpdate} from '@/lib/database.types';
+import {profileService} from '@/lib/services/profile.service';
+import {router, Stack} from 'expo-router';
 import React from 'react';
 import {Controller, SubmitHandler, useForm} from "react-hook-form";
 
 import {
+    Alert,
     StyleSheet,
     TextInput,
     TouchableOpacity,
@@ -21,35 +23,39 @@ type ProfileInputs = {
     instruments: string;
 };
 
-// Mock data - in real app, this would come from context/state management
 export default function EditProfileScreen() {
+    const {profile, refreshProfile} = useAuth();
     const {
         control,
         handleSubmit,
         formState: {errors},
     } = useForm<ProfileInputs>({
         defaultValues: {
-            firstName: '',
-            lastName: '',
-            age: 0,
-            city: '',
-            instruments: '',
+            firstName: profile?.firstName,
+            lastName: profile?.lastName,
+            age: profile?.age,
+            city: profile?.city,
+            instruments: profile?.instruments?.join(','),
         }
     });
 
-    const onSubmit: SubmitHandler<ProfileInputs> = (data: ProfileInputs) => {
-        console.log('Form data:', data);
-        const profile: UserProfile = {
-            id: profileMock.id,
-            firstName: data.firstName,
-            lastName: data.lastName,
+    const onSubmit: SubmitHandler<ProfileInputs> = async (data: ProfileInputs) => {
+
+        if (!profile) {
+            Alert.alert('Erreur', 'Profil non trouvé');
+            return;
+        }
+
+        const updates: ProfileUpdate = {
+            id: profile.id,
+            first_name: data.firstName,
+            last_name: data.lastName,
             age: data.age,
             city: data.city,
             instruments: data.instruments.split(',').map(i => i.trim().toLocaleLowerCase()),
-            jamsParticipated: profileMock.jamsParticipated,
         };
-        console.log('Profile:', profile);
-        // Here you would typically save to your backend/state management
+        await profileService.updateProfile(profile.id, updates);
+        await refreshProfile(); // Refresh the profile in the context
         router.back();
     };
 
@@ -59,7 +65,14 @@ export default function EditProfileScreen() {
 
     return (
         <>
-            <Stack.Screen options={{title: 'Edit profile'}} />
+            <Stack.Screen
+                options={{
+                    title: 'Modifier le profil',
+                    headerShown: true,
+                    headerBackTitle: 'Retour',
+                    headerBackVisible: true,
+                }}
+            />
             <ThemedView style={styles.container}>
                 <View style={styles.content}>
                     <View style={styles.inputGroup}>

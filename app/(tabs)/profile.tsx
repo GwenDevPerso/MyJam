@@ -2,11 +2,31 @@ import JamItem from '@/components/JamItem';
 import {ThemedText} from '@/components/ThemedText';
 import {ThemedView} from '@/components/ThemedView';
 import {IconSymbol} from '@/components/ui/IconSymbol';
-import {profileMock} from '@/constants/mocks';
-import {router} from 'expo-router';
+import {useAuth} from '@/contexts/AuthContext';
+import {JamSession} from '@/definitions/types';
+import {jamSessionService} from '@/lib/services/jam.service';
+import {router, useFocusEffect} from 'expo-router';
+import {useCallback, useState} from 'react';
 import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 
 export default function ProfileScreen() {
+  const {profile} = useAuth();
+  const [jamsParticipated, setJamsParticipated] = useState<JamSession[]>([]);
+  const [jamsCreated, setJamsCreated] = useState<JamSession[]>([]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!profile?.id) return;
+
+      jamSessionService.getJamsParticipated(profile.id).then((jams) => {
+        setJamsParticipated(jams);
+      });
+      jamSessionService.getJamsCreated(profile.id).then((jams) => {
+        setJamsCreated(jams);
+      });
+    }, [profile?.id])
+  );
+
   const renderInfoCard = (title: string, content: string | number) => (
     <ThemedView style={styles.infoCard}>
       <ThemedText type="defaultSemiBold" style={styles.infoTitle}>
@@ -42,31 +62,41 @@ export default function ProfileScreen() {
           name="person.fill"
           style={styles.profileIcon}
         />
-        <ThemedText type="title" style={styles.userName}>
-          {profileMock.firstName} {profileMock.lastName}
+        <View style={styles.editButtonContainer}>
+          <ThemedText type="title" style={styles.userName}>
+            {profile?.firstName} {profile?.lastName}
+          </ThemedText>
           <TouchableOpacity
             style={styles.editButton}
             onPress={handleEdit}
           >
-            <IconSymbol size={28} name="edit" color="#4A90E2" />
+            <IconSymbol size={28} name="pencil" color="#4A90E2" />
           </TouchableOpacity>
-        </ThemedText>
-        <ThemedText style={styles.userId}>ID: {profileMock.id}</ThemedText>
+        </View>
+        <ThemedText style={styles.userId}>ID: {profile?.id}</ThemedText>
       </ThemedView>
 
       <ThemedView style={styles.content}>
         <View style={styles.row}>
-          {renderInfoCard("Âge", `${profileMock.age} ans`)}
-          {renderInfoCard("Ville", profileMock.city)}
+          {renderInfoCard("Âge", `${profile?.age} ans`)}
+          {renderInfoCard("Ville", profile?.city || '')}
         </View>
 
         <ThemedText type="defaultSemiBold" style={styles.infoTitle}>Instruments</ThemedText>
-        {renderInstrumentsList(profileMock.instruments)}
+        {renderInstrumentsList(profile?.instruments || [])}
         <ThemedText type="defaultSemiBold" style={styles.infoTitle}>Jams Participées</ThemedText>
-        <ScrollView style={styles.jamList} showsVerticalScrollIndicator={false}>
-          {profileMock.jamsParticipated.map((jam) => (
+        <ScrollView style={styles.jamList} contentContainerStyle={styles.jamListContent} showsVerticalScrollIndicator={false}>
+          {jamsParticipated.map((jam) => (
             <JamItem key={jam.id} jam={jam} />
           ))}
+          {jamsParticipated.length === 0 && <ThemedText>Aucune jam participée</ThemedText>}
+        </ScrollView>
+        <ThemedText type="defaultSemiBold" style={styles.infoTitle}>Jams Organisées</ThemedText>
+        <ScrollView style={styles.jamList} contentContainerStyle={styles.jamListContent} showsVerticalScrollIndicator={false}>
+          {jamsCreated.map((jam) => (
+            <JamItem key={jam.id} jam={jam} />
+          ))}
+          {jamsCreated.length === 0 && <ThemedText>Aucune jam organisée</ThemedText>}
         </ScrollView>
       </ThemedView>
     </ScrollView>
@@ -77,6 +107,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+  //#region Header
   header: {
     alignItems: 'center',
     paddingVertical: 40,
@@ -86,13 +117,29 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   userName: {
-    marginBottom: 8,
     textAlign: 'center',
   },
   userId: {
     opacity: 0.7,
     fontSize: 14,
   },
+  editButton: {
+    marginLeft: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    width: 40,
+    height: 40,
+  },
+  editButtonContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  //#endregion
+  //#region Content
   content: {
     paddingHorizontal: 20,
     paddingBottom: 40,
@@ -140,7 +187,6 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   jamList: {
-    gap: 8,
     flex: 1,
     padding: 16,
     borderRadius: 12,
@@ -148,10 +194,8 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     maxHeight: 500,
   },
-  editButton: {
-    marginLeft: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    borderRadius: 6,
-    padding: 6
-  }
+  jamListContent: {
+    gap: 16,
+  },
+  //#endregion
 });

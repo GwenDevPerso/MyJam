@@ -1,0 +1,16 @@
+TODO:
+✔ refaire le typage front / supabase @done(25-07-18 11:14)
+✔ refresh les infos du profile quand on revient sur la page apres avoir update @done(25-07-18 11:14)
+☐ bitbucket pour les images
+☐ voir ses jams 
+  ✔ -> créees @done(25-07-21 18:43)
+  -> update
+  ✔ -> delete @done(25-07-21 18:43)
+☐ map
+☐ skeleton loader
+✔ date add jam ne marche pas @done(25-07-21 18:44)
+☐ refresh les data a quand on add ou quand on rej une jam
+☐ ajouter un store redux pour les jams
+☐ autocomplete location
+
+☐ map : coordonnées doivent find tout les jams dans la zone

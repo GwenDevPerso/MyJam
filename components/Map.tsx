@@ -1,7 +1,8 @@
+import {useLocation} from '@/contexts/LocationContext';
 import {Ionicons} from '@expo/vector-icons';
 import * as Location from 'expo-location';
 import React, {useEffect, useState} from 'react';
-import {Alert, Platform, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {Platform, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
 
 // Only import MapView on native platforms
 let MapView: any, Marker: any;
@@ -11,14 +12,17 @@ if (Platform.OS !== 'web') {
     Marker = MapKit.Marker;
 }
 
+export type MarkerType = {
+    id: number;
+    latitude: number;
+    longitude: number;
+    title: string;
+    description: string;
+};
+
+
 interface MapProps {
-    markers?: {
-        id: number;
-        latitude: number;
-        longitude: number;
-        title: string;
-        description: string;
-    }[];
+    markers?: MarkerType[];
     showUserLocation?: boolean;
     onLocationChange?: (location: Location.LocationObject) => void;
 }
@@ -28,8 +32,7 @@ export default function Map({
     showUserLocation = true,
     onLocationChange
 }: MapProps) {
-    const [location, setLocation] = useState<Location.LocationObject | null>(null);
-    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const {location, loading, error, getCurrentLocation, hasPermission} = useLocation();
     const [region, setRegion] = useState({
         latitude: 48.8566,
         longitude: 2.3522,
@@ -38,54 +41,19 @@ export default function Map({
     });
 
     useEffect(() => {
-        getCurrentLocation();
-    }, []);
-
-    const getCurrentLocation = async () => {
-        try {
-            // Request location permissions
-            const {status} = await Location.requestForegroundPermissionsAsync();
-
-            if (status !== 'granted') {
-                setErrorMsg('Permission to access location was denied');
-                Alert.alert(
-                    'Location Permission',
-                    'Please enable location permissions to use this feature.',
-                    [{text: 'OK'}]
-                );
-                return;
-            }
-
-            // Get current location
-            const currentLocation = await Location.getCurrentPositionAsync({
-                accuracy: Location.Accuracy.High,
-            });
-
-            setLocation(currentLocation);
-
-            // Update map region to current location
+        if (location) {
             setRegion({
-                latitude: currentLocation.coords.latitude,
-                longitude: currentLocation.coords.longitude,
+                latitude: location.coords.latitude,
+                longitude: location.coords.longitude,
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
             });
 
-            // Call callback if provided
             if (onLocationChange) {
-                onLocationChange(currentLocation);
+                onLocationChange(location);
             }
-
-        } catch (error) {
-            setErrorMsg('Error getting location');
-            console.error('Error getting location:', error);
-            Alert.alert(
-                'Location Error',
-                'Could not retrieve your location. Please try again.',
-                [{text: 'OK'}]
-            );
         }
-    };
+    }, [location, onLocationChange]);
 
     // Web fallback component
     const WebMapFallback = () => (
@@ -130,10 +98,10 @@ export default function Map({
         </View>
     );
 
-    if (errorMsg) {
+    if (error) {
         return (
             <View style={styles.errorContainer}>
-                <Text style={styles.errorText}>{errorMsg}</Text>
+                <Text style={styles.errorText}>{error}</Text>
                 <Text style={styles.errorSubtext}>
                     Please enable location permissions to view the map.
                 </Text>

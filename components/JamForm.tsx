@@ -1,3 +1,4 @@
+import {Profile} from '@/definitions/types/user.types';
 import {Ionicons} from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import React, {useState} from 'react';
@@ -14,19 +15,20 @@ import {
 import {JamSession} from '../definitions/types/Jam.types';
 
 interface JamFormProps {
-    onSubmit?: (jamData: Omit<JamSession, 'id'>) => void;
+    onSubmit?: (jamData: Omit<JamSession, 'id' | 'created_by' | 'created_at' | 'updated_at' | 'latitude' | 'longitude'>) => void;
     initialData?: Partial<JamSession>;
     isLoading?: boolean;
 }
 
-type JamFormInputs = {
+export type JamFormInputs = {
     name: string;
     date: Date;
     city: string;
     location: string;
-    participants: number;
     description: string;
     style: string;
+    participants: Profile[];
+    createdBy: string;
 };
 
 export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading = false}: JamFormProps) {
@@ -38,7 +40,6 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
             date: initialData?.date || new Date(),
             city: initialData?.city || '',
             location: initialData?.location || '',
-            participants: initialData?.participants || 1,
             description: initialData?.description || '',
             style: initialData?.style || '',
         }
@@ -57,9 +58,10 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
             date: new Date(),
             city: '',
             location: '',
-            participants: 1,
             description: '',
             style: '',
+            participants: [],
+            createdBy: '',
         });
     };
 
@@ -225,7 +227,7 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
             </View>
 
             {/* Participants */}
-            <View style={styles.inputGroup}>
+            {/* <View style={styles.inputGroup}>
                 <Text style={styles.label}>Expected Participants *</Text>
                 <Controller
                     control={control}
@@ -256,7 +258,7 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
                     name="participants"
                 />
                 {errors.participants && <Text style={styles.errorText}>{errors.participants.message}</Text>}
-            </View>
+            </View> */}
 
             {/* Description */}
             <View style={styles.inputGroup}>

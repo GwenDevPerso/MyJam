@@ -13,11 +13,13 @@ const MAPPING = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'email': 'add',
-  'chevron.left.forwardslash.chevron.right': 'code',
+  'chevron.left': 'chevron-left',
   'chevron.right': 'chevron-right',
   'plus': 'add',
   'person.fill': 'person',
   'edit': 'edit',
+  'trash': 'delete',
+  'pencil': 'edit',
 } as const;
 
 type IconMapping = typeof MAPPING;

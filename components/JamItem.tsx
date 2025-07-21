@@ -1,25 +1,29 @@
 import {JamSession} from "@/definitions/types";
-import {StyleSheet, View} from "react-native";
+import {router} from "expo-router";
+import {StyleSheet, TouchableOpacity, View} from "react-native";
 import {ThemedText} from "./ThemedText";
 import {ThemedView} from "./ThemedView";
 
 export default function JamItem({jam}: {jam: JamSession;}) {
     return (
-        <ThemedView key={jam.id} style={styles.item}>
-            <View style={styles.header}>
-                <View>
-                    <ThemedText type="defaultSemiBold">{jam.name}</ThemedText>
+        <TouchableOpacity onPress={() => router.push(`/jam-detail/${jam.id}`)}>
+            <ThemedView style={[styles.item]}>
+                <View style={styles.header}>
+                    <View>
+                        <ThemedText type="defaultSemiBold">{jam.name}</ThemedText>
+                    </View>
+                    <View>
+                        <ThemedText>{new Date(jam.date).toLocaleDateString()} à {new Date(jam.date).toLocaleTimeString()}</ThemedText>
+                    </View>
                 </View>
-                <View>
-                    <ThemedText>{jam.date.toLocaleDateString()}</ThemedText>
+                <View style={styles.content}>
+                    <ThemedText>{jam.city}</ThemedText>
+                    <ThemedText>{jam.location}</ThemedText>
+                    <ThemedText>{jam.style}</ThemedText>
+                    <ThemedText>Inscrits : undefined</ThemedText>
                 </View>
-            </View>
-            <View style={styles.content}>
-                <ThemedText>{jam.city}, {jam.location}</ThemedText>
-                <ThemedText>{jam.style}</ThemedText>
-                <ThemedText>Inscrits : {jam.participants}</ThemedText>
-            </View>
-        </ThemedView>
+            </ThemedView>
+        </TouchableOpacity>
     );
 }
 
@@ -29,12 +33,9 @@ const styles = StyleSheet.create({
         padding: 16,
         borderRadius: 12,
         backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        marginBottom: 16,
     },
     header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
+        marginBottom: 16,
     },
     content: {
         flex: 1,
