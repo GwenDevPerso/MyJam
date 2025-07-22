@@ -1,5 +1,5 @@
+import {Database} from '@/lib/database.types';
 import {createClient} from '@supabase/supabase-js';
-import type {Database} from '../lib/database.types';
 import {supabaseConfig} from './config';
 
 // Simple web-first configuration

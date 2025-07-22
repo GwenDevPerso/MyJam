@@ -12,7 +12,9 @@ import {
     TouchableOpacity,
     View
 } from 'react-native';
-import {JamSession} from '../definitions/types/Jam.types';
+import {mapboxConfig} from '../../constants/config';
+import {JamSession} from '../../definitions/types/Jam.types';
+import LocationTextInput from '../LocationTextInput';
 
 interface JamFormProps {
     onSubmit?: (jamData: Omit<JamSession, 'id' | 'created_by' | 'created_at' | 'updated_at' | 'latitude' | 'longitude'>) => void;
@@ -29,6 +31,8 @@ export type JamFormInputs = {
     style: string;
     participants: Profile[];
     createdBy: string;
+    latitude?: number;
+    longitude?: number;
 };
 
 export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading = false}: JamFormProps) {
@@ -86,6 +90,7 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
         'Jazz', 'Blues', 'Rock', 'Pop', 'Folk', 'Classical',
         'Electronic', 'Hip-Hop', 'R&B', 'Country', 'Reggae', 'Other'
     ];
+
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -150,41 +155,28 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
                 />
             )}
 
-            {/* City */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>City *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true}}
-                    render={({field: {onChange, onBlur, value}}) => (
-                        <TextInput
-                            style={[styles.input, errors.city && styles.inputError]}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            placeholder="Enter city"
-                            placeholderTextColor="#999"
-                        />
-                    )}
-                    name="city"
-                />
-                {errors.city && <Text style={styles.errorText}>{errors.city.message}</Text>}
-            </View>
+
 
             {/* Location */}
             <View style={styles.inputGroup}>
                 <Text style={styles.label}>Location *</Text>
                 <Controller
                     control={control}
-                    rules={{required: true}}
-                    render={({field: {onChange, onBlur, value}}) => (
-                        <TextInput
-                            style={[styles.input, errors.location && styles.inputError]}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
+                    rules={{required: 'Location is required'}}
+                    render={({field: {onChange, value}}) => (
+                        <LocationTextInput
                             placeholder="Enter specific location/venue"
-                            placeholderTextColor="#999"
+                            value={value}
+                            onChangeText={onChange}
+                            onLocationSelect={(location) => {
+                                onChange(location.place_name);
+                                if (location.latitude && location.longitude) {
+                                    setValue('latitude', location.latitude);
+                                    setValue('longitude', location.longitude);
+                                }
+                            }}
+                            error={!!errors.location}
+                            mapboxAccessToken={mapboxConfig.accessToken}
                         />
                     )}
                     name="location"

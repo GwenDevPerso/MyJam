@@ -26,6 +26,8 @@ const rawJamSessionToJamSession = (rawJamSession: RawJamSession): JamSession => 
         location: rawJamSession.location,
         participants: [],
         createdBy: rawJamSession.created_by,
+        latitude: rawJamSession.latitude,
+        longitude: rawJamSession.longitude,
     }
 }
 

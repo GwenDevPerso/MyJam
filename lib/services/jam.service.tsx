@@ -106,7 +106,7 @@ export const jamSessionService = {
 
             const {data: profiles, error: profilesError} = await supabase
                 .from('profiles')
-                .select('id, first_name, last_name, age, city, instruments')
+                .select('id, first_name, last_name, age, city, instruments, created_at, updated_at')
                 .in('id', userIds);
 
             if (profilesError) throw profilesError;
@@ -208,8 +208,6 @@ export const jamSessionService = {
     },
 
     async getNearbyJams(latitude: number, longitude: number, radiusKm: number = 10) {
-        // You could implement this using PostGIS functions if using PostgreSQL
-        // or calculate distance on the client side
         const {data, error} = await supabase
             .from('jam_sessions')
             .select('*')

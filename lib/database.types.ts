@@ -40,6 +40,8 @@ export type RawJamSession = {
   name: string;
   style: string;
   updated_at: string | null;
+  latitude: number;
+  longitude: number;
 };
 
 export type JamSessionInsert = {
@@ -99,3 +101,24 @@ export type RawParticipant = {
 //   },
 // ];
 
+export type Database = {
+  public: {
+    Tables: {
+      jam_sessions: {
+        Row: RawJamSession;
+        Insert: JamSessionInsert;
+        Update: JamSessionUpdate;
+      };
+      profiles: {
+        Row: RawProfile;
+        Insert: ProfileInsert;
+        Update: ProfileUpdate;
+      };
+      jam_participants: {
+        Row: RawJamParticipant;
+        Insert: JamParticipantInsert;
+        Update: JamParticipantUpdate;
+      };
+    };
+  };
+};

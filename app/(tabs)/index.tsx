@@ -54,7 +54,6 @@ export default function HomeScreen() {
 
   const getJamsByLocation = () => {
     jamSessionService.getNearbyJams(location?.coords.latitude || 0, location?.coords.longitude || 0).then((jams) => {
-      console.log('jams', jams);
       getMarkerFromJams(jams);
     });
   };
