@@ -11,18 +11,21 @@ export default function AddScreen() {
 
     const createJam = async (jamData: JamFormInputs) => {
         try {
-            const coordinates = await LocationHelper.getCoordinatesFromAddress(jamData.city, jamData.location);
+            const coordinates = await LocationHelper.getCoordinatesFromAddress(jamData.location);
+            const address = await LocationHelper.getAddressFromCoordinates(coordinates.latitude, coordinates.longitude);
 
             const jamInput: JamSessionInsert = {
                 name: jamData.name,
                 date: jamData.date.toISOString(),
-                city: jamData.city,
+                city: address.city || 'Unknown',
                 location: jamData.location,
                 description: jamData.description,
                 style: jamData.style,
                 latitude: coordinates.latitude,
                 longitude: coordinates.longitude,
             };
+
+            console.log('jamInput', jamInput);
 
             await jamSessionService.create(jamInput);
             router.navigate('/');

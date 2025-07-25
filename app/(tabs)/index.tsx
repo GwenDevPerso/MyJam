@@ -35,26 +35,47 @@ export default function HomeScreen() {
         setLoading(false);
       });
 
-      getJamsByLocation();
+      // Seulement chercher les jams si on a la location
+      if (location?.coords) {
+        getJamsByLocation();
+      }
 
-    }, [profile?.id])
+    }, [profile?.id, location])  // Ajouter location dans les dépendances
   );
 
   const getMarkerFromJams = (jams: JamSession[]) => {
-    jams.forEach((jam) => {
-      setJamMarkers([...jamMarkers, {
-        id: jam.id,
-        latitude: jam.latitude,
-        longitude: jam.longitude,
-        title: jam.name,
-        description: jam.description,
-      }]);
+
+    const newMarkers: MarkerType[] = jams.map(jam => ({
+      id: jam.id,
+      latitude: jam.latitude,
+      longitude: jam.longitude,
+      title: jam.name,
+      description: jam.description,
+    }));
+
+
+    // Utiliser une fonction de callback pour éviter les doublons
+    setJamMarkers(prevMarkers => {
+      const existingIds = prevMarkers.map(marker => marker.id);
+      const uniqueNewMarkers = newMarkers.filter(marker => !existingIds.includes(marker.id));
+      const updatedMarkers = [...prevMarkers, ...uniqueNewMarkers];
+      return updatedMarkers;
     });
   };
 
   const getJamsByLocation = () => {
-    jamSessionService.getNearbyJams(location?.coords.latitude || 0, location?.coords.longitude || 0).then((jams) => {
+
+    if (!location?.coords) {
+      console.log('No location available yet, skipping jam search');
+      return;
+    }
+
+    const {latitude, longitude} = location.coords;
+
+    jamSessionService.getNearbyJams(latitude, longitude).then((jams) => {
       getMarkerFromJams(jams);
+    }).catch((error) => {
+      console.error('Error fetching nearby jams:', error);
     });
   };
 
@@ -68,6 +89,7 @@ export default function HomeScreen() {
         />
       }>
       <View>
+        <ThemedText>Debug: {jamMarkers.length} markers</ThemedText>
         <Map onLocationChange={getJamsByLocation} markers={jamMarkers} />
       </View>
       <ThemedView style={styles.titleContainer}>

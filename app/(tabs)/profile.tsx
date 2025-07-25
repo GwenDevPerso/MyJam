@@ -10,7 +10,7 @@ import {useCallback, useState} from 'react';
 import {ScrollView, StyleSheet, TouchableOpacity, View} from 'react-native';
 
 export default function ProfileScreen() {
-  const {profile} = useAuth();
+  const {profile, signOut} = useAuth();
   const [jamsParticipated, setJamsParticipated] = useState<JamSession[]>([]);
   const [jamsCreated, setJamsCreated] = useState<JamSession[]>([]);
 
@@ -52,6 +52,7 @@ export default function ProfileScreen() {
     console.log('Modifier');
     router.push('/edit-profile');
   };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -98,6 +99,11 @@ export default function ProfileScreen() {
           ))}
           {jamsCreated.length === 0 && <ThemedText>Aucune jam organisée</ThemedText>}
         </ScrollView>
+        <ThemedView style={styles.signOutButton}>
+          <TouchableOpacity onPress={signOut}>
+            <ThemedText>Déconnexion</ThemedText>
+          </TouchableOpacity>
+        </ThemedView>
       </ThemedView>
     </ScrollView>
   );
@@ -198,4 +204,11 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   //#endregion
+
+  signOutButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+    marginBottom: 100,
+  },
 });

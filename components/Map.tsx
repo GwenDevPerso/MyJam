@@ -34,8 +34,8 @@ export default function Map({
 }: MapProps) {
     const {location, loading, error, getCurrentLocation, hasPermission} = useLocation();
     const [region, setRegion] = useState({
-        latitude: 48.8566,
-        longitude: 2.3522,
+        latitude: 0,
+        longitude: 0,
         latitudeDelta: 0.0922,
         longitudeDelta: 0.0421,
     });
@@ -48,10 +48,6 @@ export default function Map({
                 latitudeDelta: 0.0922,
                 longitudeDelta: 0.0421,
             });
-
-            if (onLocationChange) {
-                onLocationChange(location);
-            }
         }
     }, [location, onLocationChange]);
 

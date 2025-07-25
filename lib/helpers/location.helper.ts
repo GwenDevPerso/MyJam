@@ -1,4 +1,5 @@
 import * as Location from 'expo-location';
+import {LocationGeocodedAddress} from 'expo-location';
 
 export type Coordinates = {
     latitude: number;
@@ -9,9 +10,9 @@ export class LocationHelper {
     /**
      * Get coordinates from city and location address
      */
-    static async getCoordinatesFromAddress(city: string, location: string): Promise<Coordinates> {
+    static async getCoordinatesFromAddress(location: string): Promise<Coordinates> {
         try {
-            const fullAddress = `${location}, ${city}`;
+            const fullAddress = `${location}`;
             const geocoded = await Location.geocodeAsync(fullAddress);
             
             if (geocoded.length > 0) {
@@ -19,15 +20,6 @@ export class LocationHelper {
                     latitude: geocoded[0].latitude,
                     longitude: geocoded[0].longitude
                 };
-            } else {
-                // Fallback: try with just the city
-                const cityGeocode = await Location.geocodeAsync(city);
-                if (cityGeocode.length > 0) {
-                    return {
-                        latitude: cityGeocode[0].latitude,
-                        longitude: cityGeocode[0].longitude
-                    };
-                }
             }
             
             throw new Error('Unable to find coordinates for the provided address');
@@ -40,27 +32,18 @@ export class LocationHelper {
     /**
      * Get address from coordinates (reverse geocoding)
      */
-    static async getAddressFromCoordinates(latitude: number, longitude: number): Promise<string> {
+    static async getAddressFromCoordinates(latitude: number, longitude: number): Promise<LocationGeocodedAddress> {
         try {
             const results = await Location.reverseGeocodeAsync({ latitude, longitude });
             
             if (results.length > 0) {
-                const address = results[0];
-                const parts = [
-                    address.name,
-                    address.street,
-                    address.city,
-                    address.region,
-                    address.country
-                ].filter(Boolean);
-                
-                return parts.join(', ');
+                return results[0];
             }
             
-            return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            throw new Error('Unable to find address for the provided coordinates');
         } catch (error) {
             console.error('Reverse geocoding error:', error);
-            return `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+            throw error;
         }
     }
 
