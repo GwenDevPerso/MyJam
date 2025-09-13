@@ -1,43 +1,88 @@
 import {JamSession} from "@/definitions/types";
 import {router} from "expo-router";
-import {StyleSheet, TouchableOpacity, View} from "react-native";
-import {ThemedText} from "./ThemedText";
-import {ThemedView} from "./ThemedView";
+import React from "react";
+import {View} from "react-native";
+import {Card, Chip, IconButton, Text, useTheme} from "react-native-paper";
 
 export default function JamItem({jam}: {jam: JamSession;}) {
+    const theme = useTheme();
+
+    const formatDate = (date: string | Date) => {
+        const d = new Date(date);
+        return {
+            date: d.toLocaleDateString('fr-FR', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+            }),
+            time: d.toLocaleTimeString('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit'
+            })
+        };
+    };
+
+    const {date, time} = formatDate(jam.date);
+
     return (
-        <TouchableOpacity onPress={() => router.push(`/jam-detail/${jam.id}`)}>
-            <ThemedView style={[styles.item]}>
-                <View style={styles.header}>
-                    <View>
-                        <ThemedText type="defaultSemiBold">{jam.name}</ThemedText>
-                    </View>
-                    <View>
-                        <ThemedText>{new Date(jam.date).toLocaleDateString()} à {new Date(jam.date).toLocaleTimeString()}</ThemedText>
+        <Card
+            style={{marginBottom: 12}}
+            onPress={() => router.push(`/jam-detail/${jam.id}`)}
+            mode="outlined"
+        >
+            <Card.Content>
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12}}>
+                    <Text variant="titleMedium" style={{flex: 1, fontWeight: '600'}}>
+                        {jam.name}
+                    </Text>
+                    <View style={{alignItems: 'flex-end', marginLeft: 8}}>
+                        <Text variant="bodySmall" style={{color: theme.colors.primary, fontWeight: '500'}}>
+                            {date}
+                        </Text>
+                        <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant}}>
+                            {time}
+                        </Text>
                     </View>
                 </View>
-                <View style={styles.content}>
-                    <ThemedText>{jam.city}</ThemedText>
-                    <ThemedText>{jam.location}</ThemedText>
-                    <ThemedText>{jam.style}</ThemedText>
-                    <ThemedText>Inscrits : undefined</ThemedText>
+
+                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}>
+                    <IconButton
+                        icon="map-marker"
+                        size={16}
+                        style={{margin: 0, padding: 0, marginRight: 4}}
+                        iconColor={theme.colors.onSurfaceVariant}
+                    />
+                    <Text variant="bodyMedium" style={{color: theme.colors.onSurfaceVariant, flex: 1}}>
+                        {jam.city}
+                    </Text>
                 </View>
-            </ThemedView>
-        </TouchableOpacity>
+
+                <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
+                    <IconButton
+                        icon="map-marker-outline"
+                        size={16}
+                        style={{margin: 0, padding: 0, marginRight: 4}}
+                        iconColor={theme.colors.onSurfaceVariant}
+                    />
+                    <Text variant="bodyMedium" style={{color: theme.colors.onSurfaceVariant, flex: 1}} numberOfLines={2}>
+                        {jam.location}
+                    </Text>
+                </View>
+
+                <View style={{flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center'}}>
+                    <Chip
+                        mode="outlined"
+                        compact
+                        textStyle={{fontSize: 12}}
+                        style={{backgroundColor: theme.colors.secondaryContainer}}
+                    >
+                        {jam.style}
+                    </Chip>
+                    <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant}}>
+                        Inscrits : -
+                    </Text>
+                </View>
+            </Card.Content>
+        </Card>
     );
 }
-
-const styles = StyleSheet.create({
-    item: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    header: {
-        marginBottom: 16,
-    },
-    content: {
-        flex: 1,
-    },
-});

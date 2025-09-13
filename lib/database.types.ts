@@ -63,6 +63,8 @@ export type JamSessionUpdate = {
   date?: string;
   city?: string;
   location?: string;
+  latitude?: number;
+  longitude?: number;
 };
 
 export type RawJamParticipant = {

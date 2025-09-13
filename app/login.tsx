@@ -1,21 +1,24 @@
-import {ThemedText} from '@/components/ThemedText';
 import {useAuth} from '@/contexts/AuthContext';
-import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import React, {useState} from 'react';
 import {Controller, SubmitHandler, useForm} from "react-hook-form";
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View
 } from 'react-native';
+import {
+    Button,
+    Card,
+    HelperText,
+    TextInput as PaperTextInput,
+    Surface,
+    Text,
+    Title,
+    useTheme
+} from 'react-native-paper';
 
 type LoginFormInputs = {
     email: string;
@@ -25,6 +28,7 @@ type LoginFormInputs = {
 export default function LoginScreen() {
     const {signIn, loading} = useAuth();
     const [showPassword, setShowPassword] = useState(false);
+    const theme = useTheme();
 
     const {control, handleSubmit, formState: {errors}, reset} = useForm<LoginFormInputs>({
         defaultValues: {
@@ -64,41 +68,46 @@ export default function LoginScreen() {
     };
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
+        <Surface style={{flex: 1}}>
+            <KeyboardAvoidingView
+                style={{flex: 1}}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                <View style={styles.header}>
-                    <ThemedText type="title" style={styles.title}>Welcome Back</ThemedText>
-                    <ThemedText type="subtitle" style={styles.subtitle}>
-                        Sign in to continue jamming
-                    </ThemedText>
-                </View>
+                <ScrollView
+                    style={{flex: 1}}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        padding: 20,
+                        justifyContent: 'center',
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={{alignItems: 'center', marginBottom: 40}}>
+                        <Title style={{textAlign: 'center', marginBottom: 8}}>
+                            Welcome Back
+                        </Title>
+                        <Text variant="bodyLarge" style={{textAlign: 'center', color: theme.colors.onSurfaceVariant}}>
+                            Sign in to continue jamming
+                        </Text>
+                    </View>
 
-                <View style={styles.form}>
-                    {/* Email Field */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Email</ThemedText>
-                        <Controller
-                            control={control}
-                            name="email"
-                            rules={{
-                                required: 'Email is required',
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: 'Please enter a valid email address'
-                                }
-                            }}
-                            render={({field: {onChange, onBlur, value}}) => (
-                                <View style={styles.inputContainer}>
-                                    <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                                    <TextInput
-                                        style={[styles.input, errors.email && styles.inputError]}
+                    <Card style={{padding: 20}}>
+                        {/* Email Field */}
+                        <View style={{marginBottom: 16}}>
+                            <Controller
+                                control={control}
+                                name="email"
+                                rules={{
+                                    required: 'Email is required',
+                                    pattern: {
+                                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message: 'Please enter a valid email address'
+                                    }
+                                }}
+                                render={({field: {onChange, onBlur, value}}) => (
+                                    <PaperTextInput
+                                        mode="outlined"
+                                        label="Email"
                                         placeholder="your.email@example.com"
                                         value={value}
                                         onChangeText={onChange}
@@ -106,28 +115,29 @@ export default function LoginScreen() {
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                         autoComplete="email"
+                                        error={!!errors.email}
+                                        left={<PaperTextInput.Icon icon="email-outline" />}
                                     />
-                                </View>
-                            )}
-                        />
-                        {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-                    </View>
+                                )}
+                            />
+                            <HelperText type="error" visible={!!errors.email}>
+                                {errors.email?.message}
+                            </HelperText>
+                        </View>
 
-                    {/* Password Field */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Password</ThemedText>
-                        <Controller
-                            control={control}
-                            name="password"
-                            rules={{
-                                required: 'Password is required',
-                                minLength: {value: 6, message: 'Password must be at least 6 characters'}
-                            }}
-                            render={({field: {onChange, onBlur, value}}) => (
-                                <View style={styles.inputContainer}>
-                                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                                    <TextInput
-                                        style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                        {/* Password Field */}
+                        <View style={{marginBottom: 24}}>
+                            <Controller
+                                control={control}
+                                name="password"
+                                rules={{
+                                    required: 'Password is required',
+                                    minLength: {value: 6, message: 'Password must be at least 6 characters'}
+                                }}
+                                render={({field: {onChange, onBlur, value}}) => (
+                                    <PaperTextInput
+                                        mode="outlined"
+                                        label="Password"
                                         placeholder="Enter your password"
                                         value={value}
                                         onChangeText={onChange}
@@ -135,170 +145,48 @@ export default function LoginScreen() {
                                         secureTextEntry={!showPassword}
                                         autoCapitalize="none"
                                         autoComplete="current-password"
+                                        error={!!errors.password}
+                                        left={<PaperTextInput.Icon icon="lock-outline" />}
+                                        right={
+                                            <PaperTextInput.Icon
+                                                icon={showPassword ? "eye-off" : "eye"}
+                                                onPress={() => setShowPassword(!showPassword)}
+                                            />
+                                        }
                                     />
-                                    <TouchableOpacity
-                                        style={styles.eyeIcon}
-                                        onPress={() => setShowPassword(!showPassword)}
-                                    >
-                                        <Ionicons
-                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={20}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        />
-                        {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-                    </View>
+                                )}
+                            />
+                            <HelperText type="error" visible={!!errors.password}>
+                                {errors.password?.message}
+                            </HelperText>
+                        </View>
 
-                    {/* Submit Button */}
-                    <TouchableOpacity
-                        style={[styles.loginButton, loading && styles.loginButtonDisabled]}
-                        onPress={handleSubmit(onSubmit)}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                            <>
-                                <ThemedText style={styles.loginButtonText}>Sign In</ThemedText>
-                                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.buttonIcon} />
-                            </>
-                        )}
-                    </TouchableOpacity>
+                        {/* Submit Button */}
+                        <Button
+                            mode="contained"
+                            onPress={handleSubmit(onSubmit)}
+                            loading={loading}
+                            disabled={loading}
+                            style={{marginBottom: 16}}
+                            contentStyle={{paddingVertical: 8}}
+                        >
+                            Sign In
+                        </Button>
 
-                    {/* Register Link */}
-                    <View style={styles.registerContainer}>
-                        <ThemedText style={styles.registerText}>Don&apos;t have an account? </ThemedText>
-                        <TouchableOpacity onPress={handleGoToRegister}>
-                            <ThemedText type="link" style={styles.registerLink}>Sign Up</ThemedText>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                        {/* Register Link */}
+                        <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
+                            <Text variant="bodyMedium">Don&apos;t have an account? </Text>
+                            <Button
+                                mode="text"
+                                onPress={handleGoToRegister}
+                                compact
+                            >
+                                Sign Up
+                            </Button>
+                        </View>
+                    </Card>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </Surface>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-    },
-    scrollView: {
-        flex: 1,
-    },
-    scrollContent: {
-        flexGrow: 1,
-        padding: 20,
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    header: {
-        alignItems: 'center',
-        marginBottom: 40,
-    },
-    title: {
-        textAlign: 'center',
-        marginBottom: 8,
-        color: '#1a1a1a',
-    },
-    subtitle: {
-        textAlign: 'center',
-        color: '#666',
-        fontSize: 16,
-    },
-    form: {
-        flex: 1,
-    },
-    fieldGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 8,
-        color: '#333',
-    },
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e1e5e9',
-        paddingHorizontal: 15,
-        minHeight: 50,
-    },
-    inputIcon: {
-        marginRight: 10,
-    },
-    input: {
-        flex: 1,
-        fontSize: 16,
-        color: '#333',
-        paddingVertical: 12,
-    },
-    passwordInput: {
-        paddingRight: 40,
-    },
-    eyeIcon: {
-        position: 'absolute',
-        right: 15,
-        padding: 5,
-    },
-    inputError: {
-        borderColor: '#e74c3c',
-        borderWidth: 2,
-    },
-    errorText: {
-        color: '#e74c3c',
-        fontSize: 14,
-        marginTop: 5,
-        marginLeft: 5,
-    },
-    loginButton: {
-        backgroundColor: '#007AFF',
-        borderRadius: 12,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 20,
-        shadowColor: '#007AFF',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    loginButtonDisabled: {
-        backgroundColor: '#9BB5FF',
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    loginButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-        marginRight: 8,
-    },
-    buttonIcon: {
-        marginLeft: 4,
-    },
-    registerContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 30,
-        paddingVertical: 15,
-    },
-    registerText: {
-        fontSize: 16,
-        color: '#666',
-    },
-    registerLink: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-}); 

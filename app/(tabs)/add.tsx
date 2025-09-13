@@ -1,7 +1,7 @@
-import {Alert, StyleSheet, Text} from 'react-native';
+import {Alert} from 'react-native';
+import {Surface, Title} from 'react-native-paper';
 
 import JamForm, {JamFormInputs} from '@/components/forms/JamForm';
-import {ThemedView} from '@/components/ThemedView';
 import {JamSessionInsert} from '@/lib/database.types';
 import {LocationHelper} from '@/lib/helpers/location.helper';
 import {jamSessionService} from '@/lib/services/jam.service';
@@ -40,26 +40,11 @@ export default function AddScreen() {
     };
 
     return (
-        <ThemedView style={styles.container}>
-            <Text style={styles.title}>Create New Jam Session</Text>
+        <Surface style={{flex: 1, paddingTop: 60}}>
+            <Title style={{textAlign: 'center', marginBottom: 20, paddingHorizontal: 20}}>
+                Create New Jam Session
+            </Title>
             <JamForm onSubmit={(jam: JamFormInputs) => createJam(jam)} />
-        </ThemedView >
+        </Surface>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 16,
-        backgroundColor: 'rgb(21, 23, 24)',
-        paddingVertical: 100,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#fff',
-        marginBottom: 30,
-        textAlign: 'center',
-    },
-
-});

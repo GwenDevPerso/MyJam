@@ -1,22 +1,26 @@
-import {ThemedText} from '@/components/ThemedText';
 import {useAuth} from '@/contexts/AuthContext';
 import {Instrument} from '@/definitions/types/user.types';
-import {Ionicons} from '@expo/vector-icons';
 import {router} from 'expo-router';
 import React, {useState} from 'react';
 import {Controller, SubmitHandler, useForm} from "react-hook-form";
 import {
-    ActivityIndicator,
     Alert,
     KeyboardAvoidingView,
     Platform,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View
 } from 'react-native';
+import {
+    Button,
+    Card,
+    Chip,
+    HelperText,
+    TextInput as PaperTextInput,
+    Surface,
+    Text,
+    Title,
+    useTheme
+} from 'react-native-paper';
 
 type RegisterFormInputs = {
     email: string;
@@ -34,6 +38,7 @@ export default function RegisterScreen() {
     const [selectedInstruments, setSelectedInstruments] = useState<string[]>([]);
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+    const theme = useTheme();
 
     const {control, handleSubmit, formState: {errors}, watch, reset} = useForm<RegisterFormInputs>({
         defaultValues: {
@@ -120,41 +125,45 @@ export default function RegisterScreen() {
     const instrumentsArray = Object.values(Instrument);
 
     return (
-        <KeyboardAvoidingView
-            style={styles.container}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-            <ScrollView
-                style={styles.scrollView}
-                contentContainerStyle={styles.scrollContent}
-                showsVerticalScrollIndicator={false}
+        <Surface style={{flex: 1}}>
+            <KeyboardAvoidingView
+                style={{flex: 1}}
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             >
-                <View style={styles.header}>
-                    <ThemedText type="title" style={styles.title}>Join My Jam</ThemedText>
-                    <ThemedText type="subtitle" style={styles.subtitle}>
-                        Create your account to start jamming
-                    </ThemedText>
-                </View>
+                <ScrollView
+                    style={{flex: 1}}
+                    contentContainerStyle={{
+                        flexGrow: 1,
+                        padding: 20,
+                    }}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={{alignItems: 'center', marginBottom: 30, paddingTop: 20}}>
+                        <Title style={{textAlign: 'center', marginBottom: 8}}>
+                            Join My Jam
+                        </Title>
+                        <Text variant="bodyLarge" style={{textAlign: 'center', color: theme.colors.onSurfaceVariant}}>
+                            Create your account to start jamming
+                        </Text>
+                    </View>
 
-                <View style={styles.form}>
-                    {/* Email Field */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Email *</ThemedText>
-                        <Controller
-                            control={control}
-                            name="email"
-                            rules={{
-                                required: 'Email is required',
-                                pattern: {
-                                    value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-                                    message: 'Please enter a valid email address'
-                                }
-                            }}
-                            render={({field: {onChange, onBlur, value}}) => (
-                                <View style={styles.inputContainer}>
-                                    <Ionicons name="mail-outline" size={20} color="#666" style={styles.inputIcon} />
-                                    <TextInput
-                                        style={[styles.input, errors.email && styles.inputError]}
+                    <Card style={{padding: 20}}>
+                        {/* Email Field */}
+                        <View style={{marginBottom: 16}}>
+                            <Controller
+                                control={control}
+                                name="email"
+                                rules={{
+                                    required: 'Email is required',
+                                    pattern: {
+                                        value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+                                        message: 'Please enter a valid email address'
+                                    }
+                                }}
+                                render={({field: {onChange, onBlur, value}}) => (
+                                    <PaperTextInput
+                                        mode="outlined"
+                                        label="Email *"
                                         placeholder="your.email@example.com"
                                         value={value}
                                         onChangeText={onChange}
@@ -162,28 +171,29 @@ export default function RegisterScreen() {
                                         keyboardType="email-address"
                                         autoCapitalize="none"
                                         autoComplete="email"
+                                        error={!!errors.email}
+                                        left={<PaperTextInput.Icon icon="email-outline" />}
                                     />
-                                </View>
-                            )}
-                        />
-                        {errors.email && <Text style={styles.errorText}>{errors.email.message}</Text>}
-                    </View>
+                                )}
+                            />
+                            <HelperText type="error" visible={!!errors.email}>
+                                {errors.email?.message}
+                            </HelperText>
+                        </View>
 
-                    {/* Password Field */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Password *</ThemedText>
-                        <Controller
-                            control={control}
-                            name="password"
-                            rules={{
-                                required: 'Password is required',
-                                // validate: validatePassword
-                            }}
-                            render={({field: {onChange, onBlur, value}}) => (
-                                <View style={styles.inputContainer}>
-                                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                                    <TextInput
-                                        style={[styles.input, styles.passwordInput, errors.password && styles.inputError]}
+                        {/* Password Field */}
+                        <View style={{marginBottom: 16}}>
+                            <Controller
+                                control={control}
+                                name="password"
+                                rules={{
+                                    required: 'Password is required',
+                                    validate: validatePassword
+                                }}
+                                render={({field: {onChange, onBlur, value}}) => (
+                                    <PaperTextInput
+                                        mode="outlined"
+                                        label="Password *"
                                         placeholder="Enter a strong password"
                                         value={value}
                                         onChangeText={onChange}
@@ -191,38 +201,35 @@ export default function RegisterScreen() {
                                         secureTextEntry={!showPassword}
                                         autoCapitalize="none"
                                         autoComplete="new-password"
+                                        error={!!errors.password}
+                                        left={<PaperTextInput.Icon icon="lock-outline" />}
+                                        right={
+                                            <PaperTextInput.Icon
+                                                icon={showPassword ? "eye-off" : "eye"}
+                                                onPress={() => setShowPassword(!showPassword)}
+                                            />
+                                        }
                                     />
-                                    <TouchableOpacity
-                                        style={styles.eyeIcon}
-                                        onPress={() => setShowPassword(!showPassword)}
-                                    >
-                                        <Ionicons
-                                            name={showPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={20}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        />
-                        {errors.password && <Text style={styles.errorText}>{errors.password.message}</Text>}
-                    </View>
+                                )}
+                            />
+                            <HelperText type="error" visible={!!errors.password}>
+                                {errors.password?.message}
+                            </HelperText>
+                        </View>
 
-                    {/* Confirm Password Field */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Confirm Password *</ThemedText>
-                        <Controller
-                            control={control}
-                            name="confirmPassword"
-                            rules={{
-                                required: 'Please confirm your password',
-                                validate: validateConfirmPassword
-                            }}
-                            render={({field: {onChange, onBlur, value}}) => (
-                                <View style={styles.inputContainer}>
-                                    <Ionicons name="lock-closed-outline" size={20} color="#666" style={styles.inputIcon} />
-                                    <TextInput
-                                        style={[styles.input, styles.passwordInput, errors.confirmPassword && styles.inputError]}
+                        {/* Confirm Password Field */}
+                        <View style={{marginBottom: 16}}>
+                            <Controller
+                                control={control}
+                                name="confirmPassword"
+                                rules={{
+                                    required: 'Please confirm your password',
+                                    validate: validateConfirmPassword
+                                }}
+                                render={({field: {onChange, onBlur, value}}) => (
+                                    <PaperTextInput
+                                        mode="outlined"
+                                        label="Confirm Password *"
                                         placeholder="Confirm your password"
                                         value={value}
                                         onChangeText={onChange}
@@ -230,376 +237,187 @@ export default function RegisterScreen() {
                                         secureTextEntry={!showConfirmPassword}
                                         autoCapitalize="none"
                                         autoComplete="new-password"
+                                        error={!!errors.confirmPassword}
+                                        left={<PaperTextInput.Icon icon="lock-outline" />}
+                                        right={
+                                            <PaperTextInput.Icon
+                                                icon={showConfirmPassword ? "eye-off" : "eye"}
+                                                onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            />
+                                        }
                                     />
-                                    <TouchableOpacity
-                                        style={styles.eyeIcon}
-                                        onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                                    >
-                                        <Ionicons
-                                            name={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                                            size={20}
-                                            color="#666"
-                                        />
-                                    </TouchableOpacity>
-                                </View>
-                            )}
-                        />
-                        {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword.message}</Text>}
-                    </View>
+                                )}
+                            />
+                            <HelperText type="error" visible={!!errors.confirmPassword}>
+                                {errors.confirmPassword?.message}
+                            </HelperText>
+                        </View>
 
-                    {/* Name Fields Row */}
-                    <View style={styles.nameRow}>
-                        <View style={[styles.fieldGroup, styles.halCol]}>
-                            <ThemedText style={styles.label}>First Name *</ThemedText>
-                            <Controller
-                                control={control}
-                                name="firstName"
-                                rules={{
-                                    required: 'First name is required',
-                                    minLength: {value: 2, message: 'First name must be at least 2 characters'}
-                                }}
-                                render={({field: {onChange, onBlur, value}}) => (
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, errors.firstName && styles.inputError]}
+                        {/* Name Fields Row */}
+                        <View style={{flexDirection: 'row', gap: 12, marginBottom: 16}}>
+                            <View style={{flex: 1}}>
+                                <Controller
+                                    control={control}
+                                    name="firstName"
+                                    rules={{
+                                        required: 'First name is required',
+                                        minLength: {value: 2, message: 'First name must be at least 2 characters'}
+                                    }}
+                                    render={({field: {onChange, onBlur, value}}) => (
+                                        <PaperTextInput
+                                            mode="outlined"
+                                            label="First Name *"
                                             placeholder="First name"
                                             value={value}
                                             onChangeText={onChange}
                                             onBlur={onBlur}
                                             autoCapitalize="words"
                                             autoComplete="given-name"
+                                            error={!!errors.firstName}
+                                            left={<PaperTextInput.Icon icon="account-outline" />}
                                         />
-                                    </View>
-                                )}
-                            />
-                            {errors.firstName && <Text style={styles.errorText}>{errors.firstName.message}</Text>}
-                        </View>
+                                    )}
+                                />
+                                <HelperText type="error" visible={!!errors.firstName}>
+                                    {errors.firstName?.message}
+                                </HelperText>
+                            </View>
 
-                        <View style={[styles.fieldGroup, styles.halCol]}>
-                            <ThemedText style={styles.label}>Last Name *</ThemedText>
-                            <Controller
-                                control={control}
-                                name="lastName"
-                                rules={{
-                                    required: 'Last name is required',
-                                    minLength: {value: 2, message: 'Last name must be at least 2 characters'}
-                                }}
-                                render={({field: {onChange, onBlur, value}}) => (
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="person-outline" size={20} color="#666" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, errors.lastName && styles.inputError]}
+                            <View style={{flex: 1}}>
+                                <Controller
+                                    control={control}
+                                    name="lastName"
+                                    rules={{
+                                        required: 'Last name is required',
+                                        minLength: {value: 2, message: 'Last name must be at least 2 characters'}
+                                    }}
+                                    render={({field: {onChange, onBlur, value}}) => (
+                                        <PaperTextInput
+                                            mode="outlined"
+                                            label="Last Name *"
                                             placeholder="Last name"
                                             value={value}
                                             onChangeText={onChange}
                                             onBlur={onBlur}
                                             autoCapitalize="words"
                                             autoComplete="family-name"
+                                            error={!!errors.lastName}
+                                            left={<PaperTextInput.Icon icon="account-outline" />}
                                         />
-                                    </View>
-                                )}
-                            />
-                            {errors.lastName && <Text style={styles.errorText}>{errors.lastName.message}</Text>}
+                                    )}
+                                />
+                                <HelperText type="error" visible={!!errors.lastName}>
+                                    {errors.lastName?.message}
+                                </HelperText>
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Age and City Row */}
-                    <View style={styles.nameRow}>
-                        <View style={[styles.fieldGroup, styles.halCol]}>
-                            <ThemedText style={styles.label}>Age *</ThemedText>
-                            <Controller
-                                control={control}
-                                name="age"
-                                rules={{
-                                    required: 'Age is required',
-                                    validate: validateAge
-                                }}
-                                render={({field: {onChange, onBlur, value}}) => (
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="calendar-outline" size={20} color="#666" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, errors.age && styles.inputError]}
+                        {/* Age and City Row */}
+                        <View style={{flexDirection: 'row', gap: 12, marginBottom: 16}}>
+                            <View style={{flex: 1}}>
+                                <Controller
+                                    control={control}
+                                    name="age"
+                                    rules={{
+                                        required: 'Age is required',
+                                        validate: validateAge
+                                    }}
+                                    render={({field: {onChange, onBlur, value}}) => (
+                                        <PaperTextInput
+                                            mode="outlined"
+                                            label="Age *"
                                             placeholder="25"
                                             value={value}
                                             onChangeText={onChange}
                                             onBlur={onBlur}
                                             keyboardType="numeric"
                                             maxLength={3}
+                                            error={!!errors.age}
+                                            left={<PaperTextInput.Icon icon="calendar-outline" />}
                                         />
-                                    </View>
-                                )}
-                            />
-                            {errors.age && <Text style={styles.errorText}>{errors.age.message}</Text>}
-                        </View>
+                                    )}
+                                />
+                                <HelperText type="error" visible={!!errors.age}>
+                                    {errors.age?.message}
+                                </HelperText>
+                            </View>
 
-                        <View style={[styles.fieldGroup, styles.halCol]}>
-                            <ThemedText style={styles.label}>City *</ThemedText>
-                            <Controller
-                                control={control}
-                                name="city"
-                                rules={{
-                                    required: 'City is required',
-                                    minLength: {value: 2, message: 'City must be at least 2 characters'}
-                                }}
-                                render={({field: {onChange, onBlur, value}}) => (
-                                    <View style={styles.inputContainer}>
-                                        <Ionicons name="location-outline" size={20} color="#666" style={styles.inputIcon} />
-                                        <TextInput
-                                            style={[styles.input, errors.city && styles.inputError]}
+                            <View style={{flex: 1}}>
+                                <Controller
+                                    control={control}
+                                    name="city"
+                                    rules={{
+                                        required: 'City is required',
+                                        minLength: {value: 2, message: 'City must be at least 2 characters'}
+                                    }}
+                                    render={({field: {onChange, onBlur, value}}) => (
+                                        <PaperTextInput
+                                            mode="outlined"
+                                            label="City *"
                                             placeholder="Your city"
                                             value={value}
                                             onChangeText={onChange}
                                             onBlur={onBlur}
                                             autoCapitalize="words"
+                                            error={!!errors.city}
+                                            left={<PaperTextInput.Icon icon="map-marker-outline" />}
                                         />
-                                    </View>
-                                )}
-                            />
-                            {errors.city && <Text style={styles.errorText}>{errors.city.message}</Text>}
+                                    )}
+                                />
+                                <HelperText type="error" visible={!!errors.city}>
+                                    {errors.city?.message}
+                                </HelperText>
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Instruments Selection */}
-                    <View style={styles.fieldGroup}>
-                        <ThemedText style={styles.label}>Instruments (Optional)</ThemedText>
-                        <ThemedText style={styles.helpText}>
-                            Select the instruments you play to help others find you for jam sessions
-                        </ThemedText>
-                        <View style={styles.instrumentsContainer}>
-                            {instrumentsArray.map((instrument) => (
-                                <TouchableOpacity
-                                    key={instrument}
-                                    style={[
-                                        styles.instrumentChip,
-                                        selectedInstruments.includes(instrument) && styles.instrumentChipSelected
-                                    ]}
-                                    onPress={() => toggleInstrument(instrument)}
-                                >
-                                    <Text style={[
-                                        styles.instrumentChipText,
-                                        selectedInstruments.includes(instrument) && styles.instrumentChipTextSelected
-                                    ]}>
+                        {/* Instruments Selection */}
+                        <View style={{marginBottom: 24}}>
+                            <Text variant="bodyMedium" style={{marginBottom: 8, fontWeight: '600'}}>
+                                Instruments (Optional)
+                            </Text>
+                            <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant, marginBottom: 12}}>
+                                Select the instruments you play to help others find you for jam sessions
+                            </Text>
+                            <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8}}>
+                                {instrumentsArray.map((instrument) => (
+                                    <Chip
+                                        key={instrument}
+                                        selected={selectedInstruments.includes(instrument)}
+                                        onPress={() => toggleInstrument(instrument)}
+                                        mode={selectedInstruments.includes(instrument) ? 'flat' : 'outlined'}
+                                    >
                                         {instrument}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
+                                    </Chip>
+                                ))}
+                            </View>
                         </View>
-                    </View>
 
-                    {/* Submit Button */}
-                    <TouchableOpacity
-                        style={[styles.registerButton, loading && styles.registerButtonDisabled]}
-                        onPress={handleSubmit(onSubmit)}
-                        disabled={loading}
-                    >
-                        {loading ? (
-                            <ActivityIndicator color="#FFFFFF" size="small" />
-                        ) : (
-                            <>
-                                <ThemedText style={styles.registerButtonText}>Create Account</ThemedText>
-                                <Ionicons name="arrow-forward" size={20} color="#FFFFFF" style={styles.buttonIcon} />
-                            </>
-                        )}
-                    </TouchableOpacity>
+                        {/* Submit Button */}
+                        <Button
+                            mode="contained"
+                            onPress={handleSubmit(onSubmit)}
+                            loading={loading}
+                            disabled={loading}
+                            style={{marginBottom: 16}}
+                            contentStyle={{paddingVertical: 8}}
+                        >
+                            Create Account
+                        </Button>
 
-                    {/* Login Link */}
-                    <View style={styles.loginContainer}>
-                        <ThemedText style={styles.loginText}>Already have an account? </ThemedText>
-                        <TouchableOpacity onPress={handleGoToLogin}>
-                            <ThemedText type="link" style={styles.loginLink}>Sign In</ThemedText>
-                        </TouchableOpacity>
-                    </View>
-                </View>
-            </ScrollView>
-        </KeyboardAvoidingView>
+                        {/* Login Link */}
+                        <View style={{flexDirection: 'row', justifyContent: 'center', alignItems: 'center'}}>
+                            <Text variant="bodyMedium">Already have an account? </Text>
+                            <Button
+                                mode="text"
+                                onPress={handleGoToLogin}
+                                compact
+                            >
+                                Sign In
+                            </Button>
+                        </View>
+                    </Card>
+                </ScrollView>
+            </KeyboardAvoidingView>
+        </Surface>
     );
 }
-
-const styles = StyleSheet.create({
-    // ============================================================================
-    // CONTAINER STYLES
-    // ============================================================================
-    container: {
-        flex: 1,
-    },
-    scrollView: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    scrollContent: {
-        flexGrow: 1,
-    },
-    form: {
-        flex: 1,
-    },
-
-    // ============================================================================
-    // HEADER STYLES
-    // ============================================================================
-    header: {
-        alignItems: 'center',
-        marginBottom: 30,
-        paddingTop: 20,
-    },
-    title: {
-        textAlign: 'center',
-        marginBottom: 8,
-        color: '#1a1a1a',
-    },
-    subtitle: {
-        textAlign: 'center',
-        color: '#666',
-        fontSize: 16,
-    },
-
-    // ============================================================================
-    // ROW & LAYOUT STYLES
-    // ============================================================================
-    nameRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 15,
-    },
-    fieldGroup: {
-        marginBottom: 20,
-    },
-    halCol: {
-        width: '45%'
-    },
-
-    // ============================================================================
-    // INPUT STYLES
-    // ============================================================================
-    inputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e1e5e9',
-        width: '100%',
-        paddingHorizontal: 15,
-        gap: 5,
-        paddingVertical: 10,
-    },
-    input: {
-        fontSize: 16,
-        color: '#333',
-        width: '100%',
-    },
-    passwordInput: {
-        paddingRight: 40,
-    },
-    inputIcon: {
-    },
-    eyeIcon: {
-        position: 'absolute',
-        right: 15,
-        padding: 5,
-    },
-    inputError: {
-        borderColor: '#e74c3c',
-        borderWidth: 2,
-    },
-
-    // ============================================================================
-    // TEXT STYLES
-    // ============================================================================
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 8,
-        color: '#333',
-    },
-    helpText: {
-        fontSize: 14,
-        color: '#666',
-        marginBottom: 12,
-        lineHeight: 20,
-    },
-    errorText: {
-        color: '#e74c3c',
-        fontSize: 14,
-        marginTop: 5,
-        marginLeft: 5,
-    },
-    loginText: {
-        fontSize: 16,
-        color: '#666',
-    },
-    loginLink: {
-        fontSize: 16,
-        fontWeight: '600',
-    },
-
-    // ============================================================================
-    // BUTTON STYLES
-    // ============================================================================
-    registerButton: {
-        backgroundColor: '#007AFF',
-        borderRadius: 12,
-        paddingVertical: 15,
-        paddingHorizontal: 20,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 20,
-        shadowColor: '#007AFF',
-        shadowOffset: {width: 0, height: 4},
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
-        elevation: 8,
-    },
-    registerButtonDisabled: {
-        backgroundColor: '#9BB5FF',
-        shadowOpacity: 0,
-        elevation: 0,
-    },
-    registerButtonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: '600',
-        marginRight: 8,
-    },
-    buttonIcon: {
-        marginLeft: 4,
-    },
-    loginContainer: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginTop: 20,
-        paddingVertical: 15,
-    },
-
-    // ============================================================================
-    // INSTRUMENTS STYLES
-    // ============================================================================
-    instrumentsContainer: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-    },
-    instrumentChip: {
-        backgroundColor: '#f1f3f4',
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#e1e5e9',
-    },
-    instrumentChipSelected: {
-        backgroundColor: '#007AFF',
-        borderColor: '#007AFF',
-    },
-    instrumentChipText: {
-        fontSize: 14,
-        color: '#333',
-        fontWeight: '500',
-    },
-    instrumentChipTextSelected: {
-        color: '#FFFFFF',
-    },
-});

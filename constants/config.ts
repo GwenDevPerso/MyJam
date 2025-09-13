@@ -7,14 +7,17 @@ export const supabaseConfig = {
   anonKey: process.env.SUPABASE_ANON_KEY ?? 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpsa2plbGpraGV5bmhnaGJkZ2lqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIzMTU5MTUsImV4cCI6MjA2Nzg5MTkxNX0.U26kEPgV4wzXQy477Qn-KUt1KoqKylpWhgee4VXBzDs', // Anon key (safe for client)
 };
 
-// Mapbox Configuration
-// Get your access token from Mapbox: https://account.mapbox.com/access-tokens/
-// 1. Sign up for a free Mapbox account at https://www.mapbox.com/
-// 2. Go to your account settings and create a new access token
-// 3. Set the MAPBOX_ACCESS_TOKEN environment variable or replace the value below
-// 4. Make sure your token has the necessary scopes (geocoding, maps)
-export const mapboxConfig = {
-  accessToken: process.env.MAPBOX_ACCESS_TOKEN ?? 'pk.eyJ1IjoiZ3dlbmFlbGJpaGFuIiwiYSI6ImNtZGV3ZnVmdzA2eXYybHE1NHdwdHY0dXcifQ.L5369Cx7fBrf0VAcCsPxgA', // Replace with your Mapbox access token
+// OpenStreetMap Configuration
+// Using OpenStreetMap Nominatim API for geocoding - free and open source!
+// No API key required, but please be respectful with request frequency
+// Documentation: https://nominatim.org/release-docs/develop/api/Search/
+export const osmConfig = {
+  // Base URL for Nominatim API
+  nominatimUrl: 'https://nominatim.openstreetmap.org',
+  // User agent required by Nominatim (identifies your app)
+  userAgent: 'MyJam/1.0.0',
+  // Default country code for search filtering (optional)
+  defaultCountryCode: 'fr', // Change to your preferred default country
 };
 
 // Add other app configuration here as needed

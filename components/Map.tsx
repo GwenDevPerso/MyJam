@@ -1,16 +1,9 @@
 import {useLocation} from '@/contexts/LocationContext';
-import {Ionicons} from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import {router} from 'expo-router';
 import React, {useEffect, useState} from 'react';
-import {Platform, StyleSheet, Text, TouchableOpacity, View} from 'react-native';
-
-// Only import MapView on native platforms
-let MapView: any, Marker: any;
-if (Platform.OS !== 'web') {
-    const MapKit = require('react-native-maps');
-    MapView = MapKit.default;
-    Marker = MapKit.Marker;
-}
+import {Image, StyleSheet, Text, View} from 'react-native';
+import MapView, {Callout, Marker} from 'react-native-maps';
 
 export type MarkerType = {
     id: number;
@@ -18,8 +11,10 @@ export type MarkerType = {
     longitude: number;
     title: string;
     description: string;
+    date: string;
+    location: string;
+    image?: string; // URL de l'image ou require() pour une image locale
 };
-
 
 interface MapProps {
     markers?: MarkerType[];
@@ -32,7 +27,7 @@ export default function Map({
     showUserLocation = true,
     onLocationChange
 }: MapProps) {
-    const {location, loading, error, getCurrentLocation, hasPermission} = useLocation();
+    const {location, error, } = useLocation();
     const [region, setRegion] = useState({
         latitude: 0,
         longitude: 0,
@@ -51,49 +46,6 @@ export default function Map({
         }
     }, [location, onLocationChange]);
 
-    // Web fallback component
-    const WebMapFallback = () => (
-        <View style={styles.webContainer}>
-            <Ionicons name="location-outline" size={48} color="#666" />
-            <Text style={styles.webTitle}>Map View</Text>
-            <Text style={styles.webSubtitle}>
-                Interactive map is available on mobile devices
-            </Text>
-            {location && (
-                <View style={styles.webLocationInfo}>
-                    <Text style={styles.webLocationText}>
-                        Current Location:
-                    </Text>
-                    <Text style={styles.webLocationCoords}>
-                        Lat: {location.coords.latitude.toFixed(6)}
-                    </Text>
-                    <Text style={styles.webLocationCoords}>
-                        Lng: {location.coords.longitude.toFixed(6)}
-                    </Text>
-                </View>
-            )}
-            {markers.length > 0 && (
-                <View style={styles.webMarkersInfo}>
-                    <Text style={styles.webMarkersTitle}>
-                        Jam Locations ({markers.length}):
-                    </Text>
-                    {markers.map((marker) => (
-                        <Text key={marker.id} style={styles.webMarkerItem}>
-                            • {marker.title}
-                        </Text>
-                    ))}
-                </View>
-            )}
-            <TouchableOpacity
-                style={styles.webRefreshButton}
-                onPress={getCurrentLocation}
-            >
-                <Ionicons name="refresh" size={20} color="#007AFF" />
-                <Text style={styles.webRefreshText}>Update Location</Text>
-            </TouchableOpacity>
-        </View>
-    );
-
     if (error) {
         return (
             <View style={styles.errorContainer}>
@@ -105,12 +57,6 @@ export default function Map({
         );
     }
 
-    // Return web fallback for web platform
-    if (Platform.OS === 'web') {
-        return <WebMapFallback />;
-    }
-
-    // Return native map for mobile platforms
     return (
         <View style={styles.container}>
             <MapView
@@ -120,9 +66,9 @@ export default function Map({
                 showsMyLocationButton={true}
                 showsCompass={true}
                 showsScale={true}
-                mapType="standard"
+                mapType="terrain"
             >
-                {/* Custom markers */}
+                {/* Custom markers with custom callouts */}
                 {markers.map((marker) => (
                     <Marker
                         key={marker.id}
@@ -130,9 +76,45 @@ export default function Map({
                             latitude: marker.latitude,
                             longitude: marker.longitude,
                         }}
-                        title={marker.title}
-                        description={marker.description}
-                    />
+                    >
+                        {/* Custom marker view with pin */}
+                        <View style={styles.markerContainer}>
+                            <View style={styles.customMarker}>
+                                {marker.image ? (
+                                    <Image
+                                        source={typeof marker.image === 'string' ? {uri: marker.image} : marker.image}
+                                        style={styles.markerImage}
+                                        resizeMode="cover"
+                                    />
+                                ) : (
+                                    <View style={styles.markerPlaceholder}>
+                                        <Text style={styles.markerText}>🎵</Text>
+                                    </View>
+                                )}
+                            </View>
+                            {/* Pin pointer */}
+                            <View style={styles.markerPin} />
+                        </View>
+                        <Callout
+                            style={styles.callout}
+                            onPress={() => {
+                                console.log('callout pressed', marker);
+                                router.push(`/jam-detail/${marker.id}`);
+                            }}
+                        >
+                            <View style={styles.calloutContainer}>
+                                <Text style={styles.calloutTitle}>{marker.title}</Text>
+                                <Text style={styles.calloutDate}>{new Date(marker.date).toLocaleDateString()} à {new Date(marker.date).toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</Text>
+                                <Text style={styles.calloutLocation}>{marker.location}</Text>
+                                <Text style={styles.calloutDescription}>
+                                    {marker.description}
+                                </Text>
+                                <View style={styles.calloutButton}>
+                                    <Text style={styles.calloutButtonText}>Tap to view details</Text>
+                                </View>
+                            </View>
+                        </Callout>
+                    </Marker>
                 ))}
             </MapView>
 
@@ -290,5 +272,110 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginLeft: 8,
         fontWeight: '500',
+    },
+    // Custom marker styles
+    markerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    customMarker: {
+        width: 32,
+        height: 32,
+        backgroundColor: '#fff',
+        borderRadius: 6,
+        borderWidth: 2,
+        borderColor: '#007AFF',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.3,
+        shadowRadius: 4,
+        elevation: 6,
+        overflow: 'hidden',
+    },
+    markerPin: {
+        width: 0,
+        height: 0,
+        backgroundColor: 'transparent',
+        borderStyle: 'solid',
+        borderLeftWidth: 6,
+        borderRightWidth: 6,
+        borderBottomWidth: 0,
+        borderTopWidth: 8,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        borderTopColor: '#007AFF',
+        marginTop: -1,
+    },
+    markerImage: {
+        width: '100%',
+        height: '100%',
+    },
+    markerPlaceholder: {
+        width: '100%',
+        height: '100%',
+        backgroundColor: '#007AFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    markerText: {
+        fontSize: 14,
+        color: '#fff',
+    },
+    // Custom callout styles
+    callout: {
+        width: 250,
+        minHeight: 80,
+    },
+    calloutContainer: {
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
+    },
+    calloutTitle: {
+        fontSize: 16,
+        fontWeight: 'bold',
+        color: '#333',
+        marginBottom: 8,
+    },
+    calloutDate: {
+        fontSize: 13,
+        color: '#007AFF',
+        fontWeight: '600',
+        marginBottom: 4,
+    },
+    calloutLocation: {
+        fontSize: 13,
+        color: '#666',
+        fontStyle: 'italic',
+        marginBottom: 8,
+    },
+    calloutDescription: {
+        fontSize: 14,
+        color: '#666',
+        lineHeight: 18,
+        marginBottom: 12,
+    },
+    calloutButton: {
+        backgroundColor: '#007AFF',
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: 6,
+        alignSelf: 'flex-start',
+    },
+    calloutButtonText: {
+        color: '#fff',
+        fontSize: 12,
+        fontWeight: '600',
     },
 });       

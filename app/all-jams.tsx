@@ -1,8 +1,13 @@
-import {ScrollView, StyleSheet, TextInput, View} from 'react-native';
+import {ScrollView, View} from 'react-native';
+import {
+    ActivityIndicator,
+    Searchbar,
+    Surface,
+    Text,
+    useTheme
+} from 'react-native-paper';
 
 import JamItem from '@/components/JamItem';
-import {ThemedText} from '@/components/ThemedText';
-import {ThemedView} from '@/components/ThemedView';
 import {JamSession} from '@/definitions/types';
 import {jamSessionService} from '@/lib/services/jam.service';
 import {Stack} from 'expo-router';
@@ -13,6 +18,7 @@ export default function AllJamScreen() {
     const [filteredJams, setFilteredJams] = useState<JamSession[]>([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const theme = useTheme();
 
     useEffect(() => {
         jamSessionService.getAllAvailableJams(new Date()).then((jams) => {
@@ -45,67 +51,40 @@ export default function AllJamScreen() {
                     headerBackVisible: true,
                 }}
             />
-            <View style={styles.container}>
-                <ThemedView style={styles.searchContainer}>
-                    <TextInput
-                        style={styles.searchInput}
-                        placeholder="Rechercher par titre, ville ou style..."
-                        placeholderTextColor="#666"
-                        value={searchQuery}
-                        onChangeText={setSearchQuery}
-                    />
+            <Surface style={{flex: 1, padding: 16}}>
+                <Searchbar
+                    placeholder="Rechercher par titre, ville ou style..."
+                    onChangeText={setSearchQuery}
+                    value={searchQuery}
+                    style={{marginBottom: 16}}
+                />
 
-                </ThemedView>
-                <ThemedText type="subtitle" style={styles.title}>
+                <Text variant="titleMedium" style={{marginBottom: 16}}>
                     Trouve ta prochaine jam session avec My Jam !
-                </ThemedText>
+                </Text>
+
                 <ScrollView
-                    style={styles.jamList}
-                    contentContainerStyle={styles.jamListContent}
+                    style={{flex: 1}}
                     showsVerticalScrollIndicator={false}
                 >
                     {loading ? (
-                        <ThemedText type="subtitle">Chargement...</ThemedText>
+                        <View style={{alignItems: 'center', padding: 40}}>
+                            <ActivityIndicator size="large" />
+                            <Text variant="bodyMedium" style={{marginTop: 16}}>Chargement...</Text>
+                        </View>
                     ) : filteredJams.length === 0 ? (
-                        <ThemedText type="subtitle">Aucune jam trouvée</ThemedText>
+                        <View style={{alignItems: 'center', padding: 40}}>
+                            <Text variant="bodyMedium" style={{color: theme.colors.onSurfaceVariant}}>
+                                Aucune jam trouvée
+                            </Text>
+                        </View>
                     ) : (
-                        filteredJams.map((jam, index) => (
+                        filteredJams.map((jam) => (
                             <JamItem key={jam.id} jam={jam} />
                         ))
                     )}
                 </ScrollView>
-            </View>
+            </Surface>
         </>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 16,
-    },
-    searchContainer: {
-        marginBottom: 16,
-        borderRadius: 8,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    },
-    searchInput: {
-        padding: 12,
-        fontSize: 16,
-        color: '#fff',
-        backgroundColor: 'transparent',
-    },
-    title: {
-        marginBottom: 16,
-    },
-    jamList: {
-        flex: 1,
-        padding: 16,
-        borderRadius: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        marginBottom: 16,
-    },
-    jamListContent: {
-        gap: 16,
-    },
-});

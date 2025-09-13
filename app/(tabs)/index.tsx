@@ -1,12 +1,17 @@
-import {Image} from 'expo-image';
-import {Button, ScrollView, StyleSheet, View} from 'react-native';
+import {ScrollView, StyleSheet, View} from 'react-native';
+import {
+  ActivityIndicator,
+  Button,
+  Card,
+  Surface,
+  Text,
+  Title,
+  useTheme
+} from 'react-native-paper';
 
 import {HelloWave} from '@/components/HelloWave';
 import JamItem from '@/components/JamItem';
 import Map, {MarkerType} from '@/components/Map';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import {ThemedText} from '@/components/ThemedText';
-import {ThemedView} from '@/components/ThemedView';
 import {useAuth} from '@/contexts/AuthContext';
 import {useLocation} from '@/contexts/LocationContext';
 import {JamSession} from '@/definitions/types';
@@ -21,6 +26,44 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const {profile} = useAuth();
   const {location} = useLocation();
+  const theme = useTheme();
+
+  const getMarkerFromJams = useCallback((jams: JamSession[]) => {
+    const newMarkers: MarkerType[] = jams.map(jam => ({
+      id: jam.id,
+      latitude: jam.latitude,
+      longitude: jam.longitude,
+      title: jam.name,
+      description: jam.description,
+      date: jam.date.toISOString(),
+      location: jam.location,
+    }));
+
+
+    // Utiliser une fonction de callback pour éviter les doublons
+    setJamMarkers(prevMarkers => {
+      const existingIds = prevMarkers.map(marker => marker.id);
+      const uniqueNewMarkers = newMarkers.filter(marker => !existingIds.includes(marker.id));
+      return [...prevMarkers, ...uniqueNewMarkers];
+    });
+  }, []);
+
+
+  const getJamsByLocation = useCallback(() => {
+
+    if (!location?.coords) {
+      console.log('No location available yet, skipping jam search');
+      return;
+    }
+
+    const {latitude, longitude} = location.coords;
+
+    jamSessionService.getNearbyJams(latitude, longitude).then((jams) => {
+      getMarkerFromJams(jams);
+    }).catch((error) => {
+      console.error('Error fetching nearby jams:', error);
+    });
+  }, [location?.coords, getMarkerFromJams]);
 
   useFocusEffect(
     useCallback(() => {
@@ -40,116 +83,80 @@ export default function HomeScreen() {
         getJamsByLocation();
       }
 
-    }, [profile?.id, location])  // Ajouter location dans les dépendances
+    }, [profile?.id, location, getJamsByLocation])
   );
 
-  const getMarkerFromJams = (jams: JamSession[]) => {
-
-    const newMarkers: MarkerType[] = jams.map(jam => ({
-      id: jam.id,
-      latitude: jam.latitude,
-      longitude: jam.longitude,
-      title: jam.name,
-      description: jam.description,
-    }));
 
 
-    // Utiliser une fonction de callback pour éviter les doublons
-    setJamMarkers(prevMarkers => {
-      const existingIds = prevMarkers.map(marker => marker.id);
-      const uniqueNewMarkers = newMarkers.filter(marker => !existingIds.includes(marker.id));
-      const updatedMarkers = [...prevMarkers, ...uniqueNewMarkers];
-      return updatedMarkers;
-    });
-  };
-
-  const getJamsByLocation = () => {
-
-    if (!location?.coords) {
-      console.log('No location available yet, skipping jam search');
-      return;
-    }
-
-    const {latitude, longitude} = location.coords;
-
-    jamSessionService.getNearbyJams(latitude, longitude).then((jams) => {
-      getMarkerFromJams(jams);
-    }).catch((error) => {
-      console.error('Error fetching nearby jams:', error);
-    });
-  };
 
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{light: '#A1CEDC', dark: '#1D3D47'}}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <View>
-        <ThemedText>Debug: {jamMarkers.length} markers</ThemedText>
-        <Map onLocationChange={getJamsByLocation} markers={jamMarkers} />
+    <ScrollView style={{flex: 1}}>
+      <Map onLocationChange={getJamsByLocation} markers={jamMarkers} />
+
+      <View style={{flex: 1, padding: 20}}>
+        <Surface style={{marginBottom: 16, borderRadius: 12}}>
+          <View style={{position: 'absolute', top: 8, right: 8, backgroundColor: theme.colors.surfaceVariant, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4}}>
+            <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant}}>
+              {jamMarkers.length} markers
+            </Text>
+          </View>
+        </Surface>
+
+        <View style={{flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16}}>
+          <Title>Welcome to My Jam !</Title>
+          <HelloWave />
+        </View>
+
+        <Card style={{marginBottom: 16, padding: 16}}>
+          <Text variant="titleMedium" style={{marginBottom: 8}}>
+            Find your next jam session with My Jam !
+          </Text>
+          <Button
+            mode="contained"
+            onPress={() => router.push('/all-jams')}
+            style={{marginTop: 8}}
+          >
+            All Jams
+          </Button>
+        </Card>
+
+        <Card style={{padding: 16}}>
+          <Text variant="titleMedium" style={{marginBottom: 16}}>
+            Your next jam sessions
+          </Text>
+          <ScrollView
+            style={{maxHeight: 400}}
+            showsVerticalScrollIndicator={false}
+          >
+            {loading ? (
+              <View style={{alignItems: 'center', padding: 20}}>
+                <ActivityIndicator size="large" />
+                <Text variant="bodyMedium" style={{marginTop: 8}}>Loading...</Text>
+              </View>
+            ) : (
+              userJams.length > 0 ? userJams.map((jam) => (
+                <JamItem key={jam.id} jam={jam} />
+              )) : (
+                <View style={{alignItems: 'center', padding: 20}}>
+                  <Text variant="bodyMedium" style={{color: theme.colors.onSurfaceVariant}}>
+                    Vous n&apos;avez pas de jam session à venir
+                  </Text>
+                </View>
+              )
+            )}
+          </ScrollView>
+        </Card>
       </View>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome to My Jam !</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">
-          Find your next jam session with My Jam !
-        </ThemedText>
-        <Button title="All Jam" onPress={() => router.push('/all-jams')} />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">
-          Your next jam sessions
-        </ThemedText>
-        <ScrollView
-          style={styles.jamList}
-          contentContainerStyle={styles.jamListContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {loading ? (
-            <ThemedText type="subtitle">Loading...</ThemedText>
-          ) : (
-            userJams.length > 0 ? userJams.map((jam) => (
-              <JamItem key={jam.id} jam={jam} />
-            )) : <ThemedText type="subtitle">Vous n&apos;avez pas de jam session à venir</ThemedText>
-          )}
-        </ScrollView>
-      </ThemedView>
-    </ParallaxScrollView>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
   reactLogo: {
     height: 178,
     width: 290,
     bottom: 0,
     left: 0,
     position: 'absolute',
-  },
-  jamList: {
-    flex: 1,
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginBottom: 16,
-    maxHeight: 500,
-  },
-  jamListContent: {
-    gap: 16,
   },
 });

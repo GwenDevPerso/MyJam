@@ -1,37 +1,47 @@
-import {ThemedText} from '@/components/ThemedText';
-import {ThemedView} from '@/components/ThemedView';
-import {IconSymbol} from '@/components/ui/IconSymbol';
 import {useAuth} from '@/contexts/AuthContext';
 import {JamSession} from '@/definitions/types';
 import {jamSessionService} from '@/lib/services/jam.service';
 import {Stack, router, useLocalSearchParams} from 'expo-router';
 import React, {useEffect, useState} from 'react';
+import {Alert, ScrollView, View} from 'react-native';
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    TouchableOpacity,
-    View,
-} from 'react-native';
+    ActivityIndicator,
+    Avatar,
+    Button,
+    Card,
+    Chip,
+    Divider,
+    IconButton,
+    Surface,
+    Text,
+    Title,
+    useTheme
+} from 'react-native-paper';
 
 export default function JamDetailScreen() {
     const {profile} = useAuth();
     const {id} = useLocalSearchParams<{id: string;}>();
     const [jamSession, setJamSession] = useState<JamSession | null>(null);
     const [loading, setLoading] = useState(true);
+    const [actionLoading, setActionLoading] = useState(false);
+    const theme = useTheme();
 
     useEffect(() => {
         jamSessionService.getByIdWithParticipants(parseInt(id || '1')).then((jam) => {
             setJamSession(jam);
+            setLoading(false);
+        }).catch((error) => {
+            console.error('Error loading jam session:', error);
             setLoading(false);
         });
     }, [profile, id]);
 
     if (loading) {
         return (
-            <ThemedView style={styles.loadingContainer}>
-                <ThemedText type="subtitle">Loading...</ThemedText>
-            </ThemedView>
+            <Surface style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+                <ActivityIndicator size="large" />
+                <Text variant="bodyLarge" style={{marginTop: 16}}>Chargement...</Text>
+            </Surface>
         );
     }
 
@@ -40,24 +50,20 @@ export default function JamDetailScreen() {
         return (
             <>
                 <Stack.Screen options={{title: 'Session introuvable'}} />
-                <ThemedView style={styles.container}>
-                    <View style={styles.errorContainer}>
-                        <ThemedText type="title" style={styles.errorTitle}>
-                            Session introuvable
-                        </ThemedText>
-                        <ThemedText style={styles.errorText}>
-                            La session de jam que vous recherchez n&apos;existe pas.
-                        </ThemedText>
-                        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                            <ThemedText style={styles.backButtonText}>Retour</ThemedText>
-                        </TouchableOpacity>
-                    </View>
-                </ThemedView>
+                <Surface style={{flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20}}>
+                    <Title style={{marginBottom: 16, textAlign: 'center'}}>
+                        Session introuvable
+                    </Title>
+                    <Text variant="bodyLarge" style={{color: theme.colors.onSurfaceVariant, marginBottom: 24, textAlign: 'center'}}>
+                        La session de jam que vous recherchez n&apos;existe pas.
+                    </Text>
+                    <Button mode="contained" onPress={() => router.back()}>
+                        Retour
+                    </Button>
+                </Surface>
             </>
         );
     }
-
-
 
     const handleJoinJam = async () => {
         if (!profile) {
@@ -65,9 +71,18 @@ export default function JamDetailScreen() {
             return;
         }
 
-        await jamSessionService.joinJam(jamSession.id, profile.id);
-
-        router.back();
+        setActionLoading(true);
+        try {
+            await jamSessionService.joinJam(jamSession.id, profile.id);
+            Alert.alert('Succès', 'Vous avez rejoint la session !', [
+                {text: 'OK', onPress: () => router.back()}
+            ]);
+        } catch (error) {
+            console.error('Error joining jam:', error);
+            Alert.alert('Erreur', 'Impossible de rejoindre la session');
+        } finally {
+            setActionLoading(false);
+        }
     };
 
     const handleLeaveJam = async () => {
@@ -76,11 +91,31 @@ export default function JamDetailScreen() {
             return;
         }
 
-        await jamSessionService.leaveJam(jamSession.id, profile.id);
-
-        router.back();
-
-        Alert.alert('Succès', 'Vous avez quitté la session !');
+        Alert.alert(
+            'Quitter la session',
+            'Êtes-vous sûr de vouloir quitter cette session ?',
+            [
+                {text: 'Annuler', style: 'cancel'},
+                {
+                    text: 'Quitter',
+                    style: 'destructive',
+                    onPress: async () => {
+                        setActionLoading(true);
+                        try {
+                            await jamSessionService.leaveJam(jamSession.id, profile.id);
+                            Alert.alert('Succès', 'Vous avez quitté la session !', [
+                                {text: 'OK', onPress: () => router.back()}
+                            ]);
+                        } catch (error) {
+                            console.error('Error leaving jam:', error);
+                            Alert.alert('Erreur', 'Impossible de quitter la session');
+                        } finally {
+                            setActionLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
     };
 
     const formatDate = (date: Date): string => {
@@ -100,371 +135,214 @@ export default function JamDetailScreen() {
     };
 
     const deleteJam = async () => {
-        Alert.alert('Supprimer la session', 'Voulez-vous vraiment supprimer cette session ?', [
-            {text: 'Annuler', style: 'cancel'},
-            {
-                text: 'Supprimer', style: 'destructive', onPress: async () => {
-                    await jamSessionService.delete(jamSession.id);
-                    router.back();
+        Alert.alert(
+            'Supprimer la session',
+            'Voulez-vous vraiment supprimer cette session ? Cette action est irréversible.',
+            [
+                {text: 'Annuler', style: 'cancel'},
+                {
+                    text: 'Supprimer',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            await jamSessionService.delete(jamSession.id);
+                            Alert.alert('Succès', 'Session supprimée avec succès', [
+                                {text: 'OK', onPress: () => router.back()}
+                            ]);
+                        } catch (error) {
+                            console.error('Error deleting jam:', error);
+                            Alert.alert('Erreur', 'Impossible de supprimer la session');
+                        }
+                    }
                 }
-            },
-        ]);
+            ]
+        );
     };
 
-    const editJam = async () => {
-        console.log('editJam');
-        // router.push(`/edit-jam/${jamSession.id}`);
+    const editJam = () => {
+        router.push(`/edit/${jamSession.id}`);
     };
+
+    const isUserParticipant = jamSession.participants.some(p => p.id === profile?.id);
+    const isCreator = profile?.id === jamSession.createdBy;
 
     return (
         <>
-            <Stack.Screen options={{title: 'Détail de la session'}} />
-            <ScrollView style={styles.container}>
-                <ThemedView style={styles.content}>
-                    {/* Header Section */}
-                    <View style={styles.header}>
-                        {profile?.id === jamSession.createdBy && (
-                            <View style={styles.creatorButtonContainer}>
-                                <TouchableOpacity style={styles.headerButton} onPress={deleteJam}>
-                                    <IconSymbol size={20} name="trash" color="#4A90E2" />
-                                </TouchableOpacity>
-                                <TouchableOpacity style={styles.headerButton} onPress={editJam}>
-                                    <IconSymbol size={20} name="pencil" color="#4A90E2" />
-                                </TouchableOpacity>
-                            </View>
-                        )}
-                        <View style={styles.styleTag}>
-                            <ThemedText style={styles.styleTagText}>{jamSession.style}</ThemedText>
-                        </View>
-                        <ThemedText type="title" style={styles.jamName}>
-                            {jamSession.name}
-                        </ThemedText>
+            <Stack.Screen
+                options={{
+                    title: 'Détail de la session',
+                    headerShown: true,
+                    headerBackTitle: 'Retour',
+                    headerBackVisible: true,
+                }}
+            />
+            <Surface style={{flex: 1}}>
+                <ScrollView style={{flex: 1}} contentContainerStyle={{padding: 16}}>
+                    {/* Header Card */}
+                    <Card style={{marginBottom: 16}}>
+                        <Card.Content style={{alignItems: 'center', padding: 20}}>
+                            {isCreator && (
+                                <View style={{flexDirection: 'row', gap: 8, alignSelf: 'flex-end', marginBottom: 16}}>
+                                    <IconButton
+                                        icon="delete"
+                                        mode="contained-tonal"
+                                        onPress={deleteJam}
+                                        iconColor={theme.colors.error}
+                                    />
+                                    <IconButton
+                                        icon="pencil"
+                                        mode="contained-tonal"
+                                        onPress={editJam}
+                                    />
+                                </View>
+                            )}
 
+                            <Chip
+                                mode="flat"
+                                style={{marginBottom: 16, backgroundColor: theme.colors.primaryContainer}}
+                                textStyle={{color: theme.colors.onPrimaryContainer}}
+                            >
+                                {jamSession.style}
+                            </Chip>
 
-                    </View>
+                            <Title style={{textAlign: 'center', fontSize: 24, marginBottom: 8}}>
+                                {jamSession.name}
+                            </Title>
+                        </Card.Content>
+                    </Card>
 
-                    {/* Date & Time */}
-                    <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                            <IconSymbol size={20} name="email" color="#4A90E2" />
-                            <View style={styles.infoContent}>
-                                <ThemedText type="defaultSemiBold" style={styles.infoTitle}>
+                    {/* Date & Time Card */}
+                    <Card style={{marginBottom: 16}}>
+                        <Card.Content>
+                            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}>
+                                <IconButton icon="calendar" size={20} style={{margin: 0}} />
+                                <Text variant="titleMedium" style={{marginLeft: 8}}>
                                     Date & Heure
-                                </ThemedText>
-                                <ThemedText style={styles.infoValue}>
-                                    {formatDate(new Date(jamSession.date))}
-                                </ThemedText>
-                                <ThemedText style={styles.infoValue}>
-                                    {formatTime(new Date(jamSession.date))}
-                                </ThemedText>
+                                </Text>
                             </View>
-                        </View>
-                    </View>
+                            <Text variant="bodyLarge" style={{marginLeft: 32}}>
+                                {formatDate(new Date(jamSession.date))}
+                            </Text>
+                            <Text variant="bodyMedium" style={{marginLeft: 32, color: theme.colors.onSurfaceVariant}}>
+                                {formatTime(new Date(jamSession.date))}
+                            </Text>
+                        </Card.Content>
+                    </Card>
 
-                    {/* Location */}
-                    <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                            <IconSymbol size={20} name="house.fill" color="#4A90E2" />
-                            <View style={styles.infoContent}>
-                                <ThemedText type="defaultSemiBold" style={styles.infoTitle}>
+                    {/* Location Card */}
+                    <Card style={{marginBottom: 16}}>
+                        <Card.Content>
+                            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 8}}>
+                                <IconButton icon="map-marker" size={20} style={{margin: 0}} />
+                                <Text variant="titleMedium" style={{marginLeft: 8}}>
                                     Lieu
-                                </ThemedText>
-                                <ThemedText style={styles.infoValue}>
-                                    {jamSession.location}
-                                </ThemedText>
-                                <ThemedText style={styles.infoValue}>
-                                    {jamSession.city}
-                                </ThemedText>
+                                </Text>
                             </View>
-                        </View>
-                    </View>
+                            <Text variant="bodyLarge" style={{marginLeft: 32}}>
+                                {jamSession.location}
+                            </Text>
+                            <Text variant="bodyMedium" style={{marginLeft: 32, color: theme.colors.onSurfaceVariant}}>
+                                {jamSession.city}
+                            </Text>
+                        </Card.Content>
+                    </Card>
 
-                    {/* Participants */}
-                    <View style={styles.infoCard}>
-                        <View style={styles.infoRow}>
-                            <IconSymbol size={20} name="person.fill" color="#4A90E2" />
-                            <View style={styles.infoContent}>
-                                <ThemedText type="defaultSemiBold" style={styles.infoTitle}>
-                                    Participants
-                                </ThemedText>
-                                <ThemedText style={styles.infoValue}>
-                                    {jamSession.participants.length ?? 0} musiciens attendus
-                                </ThemedText>
-                                <ScrollView style={styles.participantsList} >
+                    {/* Participants Card */}
+                    <Card style={{marginBottom: 16}}>
+                        <Card.Content>
+                            <View style={{flexDirection: 'row', alignItems: 'center', marginBottom: 12}}>
+                                <IconButton icon="account-group" size={20} style={{margin: 0}} />
+                                <Text variant="titleMedium" style={{marginLeft: 8}}>
+                                    Participants ({jamSession.participants.length})
+                                </Text>
+                            </View>
+
+                            {jamSession.participants.length > 0 ? (
+                                <ScrollView style={{maxHeight: 200}} showsVerticalScrollIndicator={false}>
                                     {jamSession.participants.map((participant, index) => (
-                                        <View style={styles.participantItem} key={index}>
-                                            <ThemedText style={styles.participantName}>{participant.firstName} {participant.lastName}, {participant.age}</ThemedText>
-                                            <ThemedText style={styles.participantInstruments}>{participant.instruments?.join(', ')}</ThemedText>
+                                        <View key={index}>
+                                            <View style={{flexDirection: 'row', alignItems: 'center', paddingVertical: 8, marginLeft: 32}}>
+                                                <Avatar.Icon
+                                                    size={40}
+                                                    icon="account"
+                                                    style={{backgroundColor: theme.colors.primaryContainer}}
+                                                />
+                                                <View style={{marginLeft: 12, flex: 1}}>
+                                                    <Text variant="bodyMedium" style={{fontWeight: '600'}}>
+                                                        {participant.firstName} {participant.lastName}, {participant.age} ans
+                                                    </Text>
+                                                    <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant}}>
+                                                        {participant.instruments?.join(', ') || 'Aucun instrument spécifié'}
+                                                    </Text>
+                                                </View>
+                                                {participant.id === jamSession.createdBy && (
+                                                    <Chip mode="outlined" compact>
+                                                        Organisateur
+                                                    </Chip>
+                                                )}
+                                            </View>
+                                            {index < jamSession.participants.length - 1 && <Divider style={{marginLeft: 32}} />}
                                         </View>
                                     ))}
                                 </ScrollView>
-                            </View>
-                        </View>
-                    </View>
+                            ) : (
+                                <Text variant="bodyMedium" style={{marginLeft: 32, color: theme.colors.onSurfaceVariant}}>
+                                    Aucun participant pour le moment
+                                </Text>
+                            )}
+                        </Card.Content>
+                    </Card>
 
-                    {/* Description */}
-                    <View style={styles.descriptionCard}>
-                        <ThemedText type="defaultSemiBold" style={styles.descriptionTitle}>
-                            Description
-                        </ThemedText>
-                        <ThemedText style={styles.descriptionText}>
-                            {jamSession.description}
-                        </ThemedText>
-                    </View>
-
-                    {/* Host Info */}
-                    <View style={styles.hostCard}>
-                        <ThemedText type="defaultSemiBold" style={styles.hostTitle}>
-                            Organisateur
-                        </ThemedText>
-                        <View style={styles.hostInfo}>
-                            <IconSymbol size={40} name="person.fill" color="#4A90E2" style={styles.hostAvatar} />
-                            <View style={styles.hostDetails}>
-                                <ThemedText type="defaultSemiBold" style={styles.hostName}>
-                                    {profile?.firstName} {profile?.lastName}
-                                </ThemedText>
-                                <ThemedText style={styles.hostRole}>
-                                    Organisateur.trice • {profile?.instruments?.join(', ')}
-                                </ThemedText>
-                            </View>
-                        </View>
-                    </View>
+                    {/* Description Card */}
+                    <Card style={{marginBottom: 16}}>
+                        <Card.Content>
+                            <Text variant="titleMedium" style={{marginBottom: 12}}>
+                                Description
+                            </Text>
+                            <Text variant="bodyMedium" style={{lineHeight: 20}}>
+                                {jamSession.description}
+                            </Text>
+                        </Card.Content>
+                    </Card>
 
                     {/* Action Buttons */}
-                    <View style={styles.buttonGroup}>
-                        {jamSession.participants.some(p => p.id === profile?.id) ? (
-                            <TouchableOpacity style={styles.leaveButton} onPress={handleLeaveJam}>
-                                <ThemedText style={styles.actionButtonText}>
-                                    Quitter la session
-                                </ThemedText>
-                            </TouchableOpacity>
+                    <View style={{flexDirection: 'row', gap: 12, marginBottom: 20}}>
+                        {isUserParticipant ? (
+                            <Button
+                                mode="outlined"
+                                onPress={handleLeaveJam}
+                                loading={actionLoading}
+                                disabled={actionLoading}
+                                style={{flex: 1}}
+                                contentStyle={{paddingVertical: 8}}
+                                textColor={theme.colors.error}
+                            >
+                                Quitter la session
+                            </Button>
                         ) : (
-                            <TouchableOpacity style={styles.joinButton} onPress={handleJoinJam}>
-                                <ThemedText style={styles.actionButtonText}>
-                                    Rejoindre la session
-                                </ThemedText>
-                            </TouchableOpacity>
+                            <Button
+                                mode="contained"
+                                onPress={handleJoinJam}
+                                loading={actionLoading}
+                                disabled={actionLoading}
+                                style={{flex: 1}}
+                                contentStyle={{paddingVertical: 8}}
+                            >
+                                Rejoindre la session
+                            </Button>
                         )}
-                        <TouchableOpacity style={styles.shareButton}>
-                            <IconSymbol size={20} name="paperplane.fill" color="#4A90E2" />
-                            <ThemedText style={styles.shareButtonText}>Partager</ThemedText>
-                        </TouchableOpacity>
+
+                        <IconButton
+                            icon="share"
+                            mode="outlined"
+                            onPress={() => {
+                                // TODO: Implement share functionality
+                                Alert.alert('Partage', 'Fonctionnalité de partage à venir');
+                            }}
+                        />
                     </View>
-                </ThemedView>
-            </ScrollView>
+                </ScrollView>
+            </Surface>
         </>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'rgb(21, 23, 24)',
-    },
-    loadingContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    content: {
-        padding: 20,
-    },
-    errorContainer: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    errorTitle: {
-        color: '#fff',
-        marginBottom: 16,
-        textAlign: 'center',
-    },
-    errorText: {
-        color: '#ccc',
-        marginBottom: 24,
-        textAlign: 'center',
-    },
-    backButton: {
-        backgroundColor: '#4A90E2',
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-    },
-    backButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    //#region Header
-    header: {
-        marginBottom: 24,
-        alignItems: 'center',
-    },
-    headerButton: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 8,
-        paddingVertical: 12,
-        paddingHorizontal: 24,
-    },
-    creatorButtonContainer: {
-        flexDirection: 'row',
-        gap: 12,
-        justifyContent: 'flex-end',
-        width: '100%',
-        marginBottom: 16,
-    },
-    styleTag: {
-        backgroundColor: '#4A90E2',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        marginBottom: 16,
-    },
-    styleTagText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    jamName: {
-        textAlign: 'center',
-        fontSize: 28,
-        fontWeight: 'bold',
-        color: '#fff',
-    },
-    //#endregion
-
-
-    infoCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-    },
-    infoRow: {
-        flexDirection: 'row',
-        alignItems: 'flex-start',
-    },
-    infoContent: {
-        marginLeft: 12,
-        flex: 1,
-    },
-    infoTitle: {
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 4,
-    },
-    infoValue: {
-        fontSize: 14,
-        color: '#ccc',
-        marginBottom: 2,
-    },
-    descriptionCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 16,
-    },
-    descriptionTitle: {
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 8,
-    },
-    descriptionText: {
-        fontSize: 14,
-        color: '#ccc',
-        lineHeight: 20,
-    },
-    hostCard: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 16,
-        marginBottom: 24,
-    },
-    hostTitle: {
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 12,
-    },
-    hostInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    hostAvatar: {
-        marginRight: 12,
-    },
-    hostDetails: {
-        flex: 1,
-    },
-    hostName: {
-        fontSize: 16,
-        color: '#fff',
-        marginBottom: 4,
-    },
-    hostRole: {
-        fontSize: 14,
-        color: '#ccc',
-    },
-    //#region Buttons
-    buttonGroup: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    joinButton: {
-        flex: 1,
-        backgroundColor: '#4A90E2',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-    },
-    actionButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    shareButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 16,
-        gap: 8,
-    },
-    shareButtonText: {
-        color: '#4A90E2',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    leaveButton: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 12,
-        padding: 16,
-        alignItems: 'center',
-    },
-    //#endregion
-    participantsList: {
-        gap: 8,
-        flex: 1,
-        maxHeight: 150,
-    },
-    participantItem: {
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        padding: 8,
-        borderRadius: 8,
-        width: '100%',
-        marginBottom: 8,
-    },
-    participantName: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    participantInstruments: {
-        color: '#ccc',
-        fontSize: 12,
-    },
-
-}); 

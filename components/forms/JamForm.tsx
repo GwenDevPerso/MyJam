@@ -1,18 +1,22 @@
 import {Profile} from '@/definitions/types/user.types';
-import {Ionicons} from '@expo/vector-icons';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import {Controller, SubmitHandler, useForm} from "react-hook-form";
 import {
     Platform,
     ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
     View
 } from 'react-native';
-import {mapboxConfig} from '../../constants/config';
+import {
+    Button,
+    Card,
+    Chip,
+    HelperText,
+    TextInput as PaperTextInput,
+    Surface,
+    Text
+} from 'react-native-paper';
+import {osmConfig} from '../../constants/config';
 import {JamSession} from '../../definitions/types/Jam.types';
 import LocationTextInput from '../LocationTextInput';
 
@@ -40,14 +44,28 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
 
     const {control, handleSubmit, formState: {errors}, setValue, watch, reset} = useForm<JamFormInputs>({
         defaultValues: {
-            name: initialData?.name || '',
-            date: initialData?.date || new Date(),
-            city: initialData?.city || '',
-            location: initialData?.location || '',
-            description: initialData?.description || '',
-            style: initialData?.style || '',
+            name: '',
+            date: new Date(),
+            city: '',
+            location: '',
+            description: '',
+            style: '',
         }
     });
+
+    // Load initial data when component mounts or initialData changes
+    useEffect(() => {
+        if (initialData) {
+            setValue('name', initialData.name || '');
+            setValue('date', initialData.date ? new Date(initialData.date) : new Date());
+            setValue('city', initialData.city || '');
+            setValue('location', initialData.location || '');
+            setValue('description', initialData.description || '');
+            setValue('style', initialData.style || '');
+            if (initialData.latitude) setValue('latitude', initialData.latitude);
+            if (initialData.longitude) setValue('longitude', initialData.longitude);
+        }
+    }, [initialData, setValue]);
 
     const watchedValues = watch();
 
@@ -70,7 +88,6 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
     };
 
     const handleDateChange = (event: any, selectedDate?: Date) => {
-        setShowDatePicker(false);
         if (selectedDate) {
             setValue('date', selectedDate);
         }
@@ -79,7 +96,7 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
     const formatDate = (date: Date): string => {
         return date.toLocaleDateString('en-US', {
             year: 'numeric',
-            month: 'long',
+            month: 'numeric',
             day: 'numeric',
             hour: '2-digit',
             minute: '2-digit',
@@ -91,337 +108,181 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
         'Electronic', 'Hip-Hop', 'R&B', 'Country', 'Reggae', 'Other'
     ];
 
-
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-            {/* <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Jam Photo (Optional)</Text>
-                    <UploadImg
-                        onImageSelected={handleImageSelected}
-                        maxWidth={350}
-                        maxHeight={200}
-                        style={styles.imageUpload}
-                    />
-                </View> */}
-
-            {/* Jam Name */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Jam Name *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true}}
-                    render={({field: {onChange, onBlur, value}}) => (
-                        <TextInput
-                            style={[styles.input, errors.name && styles.inputError]}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            placeholder="Enter jam session name"
-                            placeholderTextColor="#999"
-                        />
-                    )}
-                    name="name"
-                />
-                {errors.name && <Text style={styles.errorText}>{errors.name.message}</Text>}
-            </View>
-
-            {/* Date & Time */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Date & Time *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true}}
-                    render={({field: {value}}) => (
-                        <TouchableOpacity
-                            style={[styles.dateButton, errors.date && styles.inputError]}
-                            onPress={() => setShowDatePicker(true)}
-                        >
-                            <Ionicons name="calendar-outline" size={20} color="#666" />
-                            <Text style={styles.dateText}>{formatDate(value)}</Text>
-                        </TouchableOpacity>
-                    )}
-                    name="date"
-                />
-                {errors.date && <Text style={styles.errorText}>{errors.date.message}</Text>}
-            </View>
-
-            {showDatePicker && (
-                <DateTimePicker
-                    value={watchedValues.date}
-                    mode="datetime"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={handleDateChange}
-                    minimumDate={new Date()}
-                />
-            )}
-
-
-
-            {/* Location */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Location *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: 'Location is required'}}
-                    render={({field: {onChange, value}}) => (
-                        <LocationTextInput
-                            placeholder="Enter specific location/venue"
-                            value={value}
-                            onChangeText={onChange}
-                            onLocationSelect={(location) => {
-                                onChange(location.place_name);
-                                if (location.latitude && location.longitude) {
-                                    setValue('latitude', location.latitude);
-                                    setValue('longitude', location.longitude);
-                                }
-                            }}
-                            error={!!errors.location}
-                            mapboxAccessToken={mapboxConfig.accessToken}
-                        />
-                    )}
-                    name="location"
-                />
-                {errors.location && <Text style={styles.errorText}>{errors.location.message}</Text>}
-            </View>
-
-            {/* Music Style */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Music Style *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true}}
-                    render={({field: {onChange, value}}) => (
-                        <View style={styles.styleGrid}>
-                            {musicStyles.map((style) => (
-                                <TouchableOpacity
-                                    key={style}
-                                    style={[
-                                        styles.styleButton,
-                                        value === style && styles.styleButtonActive,
-                                    ]}
-                                    onPress={() => onChange(style)}
-                                >
-                                    <Text
-                                        style={[
-                                            styles.styleButtonText,
-                                            value === style && styles.styleButtonTextActive,
-                                        ]}
-                                    >
-                                        {style}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </View>
-                    )}
-                    name="style"
-                />
-                {errors.style && <Text style={styles.errorText}>{errors.style.message}</Text>}
-            </View>
-
-            {/* Participants */}
-            {/* <View style={styles.inputGroup}>
-                <Text style={styles.label}>Expected Participants *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true, min: 1}}
-                    render={({field: {onChange, value}}) => (
-                        <View style={styles.participantContainer}>
-                            <TouchableOpacity
-                                style={styles.participantButton}
-                                onPress={() => onChange(Math.max(1, value - 1))}
-                            >
-                                <Ionicons name="remove" size={20} color="#666" />
-                            </TouchableOpacity>
-                            <TextInput
-                                style={[styles.participantInput, errors.participants && styles.inputError]}
-                                value={value.toString()}
-                                onChangeText={(text) => onChange(parseInt(text) || 1)}
-                                keyboardType="numeric"
-                                textAlign="center"
-                            />
-                            <TouchableOpacity
-                                style={styles.participantButton}
-                                onPress={() => onChange(value + 1)}
-                            >
-                                <Ionicons name="add" size={20} color="#666" />
-                            </TouchableOpacity>
-                        </View>
-                    )}
-                    name="participants"
-                />
-                {errors.participants && <Text style={styles.errorText}>{errors.participants.message}</Text>}
-            </View> */}
-
-            {/* Description */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>Description *</Text>
-                <Controller
-                    control={control}
-                    rules={{required: true}}
-                    render={({field: {onChange, onBlur, value}}) => (
-                        <TextInput
-                            style={[styles.textArea, errors.description && styles.inputError]}
-                            onBlur={onBlur}
-                            onChangeText={onChange}
-                            value={value}
-                            placeholder="Describe the jam session, skill level, instruments needed, etc."
-                            placeholderTextColor="#999"
-                            multiline
-                            numberOfLines={4}
-                            textAlignVertical="top"
-                        />
-                    )}
-                    name="description"
-                />
-                {errors.description && <Text style={styles.errorText}>{errors.description.message}</Text>}
-            </View>
-
-            {/* Submit Button */}
-            <TouchableOpacity
-                style={[styles.submitButton, isLoading && styles.submitButtonDisabled]}
-                onPress={handleSubmit(onSubmit)}
-                disabled={isLoading}
+        <Surface style={{flex: 1, marginBottom: 50}}>
+            <ScrollView
+                style={{flex: 1}}
+                contentContainerStyle={{padding: 20}}
+                showsVerticalScrollIndicator={false}
             >
-                <Text style={styles.submitButtonText}>
-                    {isLoading ? 'Creating Jam...' : 'Create Jam Session'}
-                </Text>
-            </TouchableOpacity>
-        </ScrollView >
+                <Card style={{padding: 20}}>
+                    {/* Jam Name */}
+                    <View style={{marginBottom: 16}}>
+                        <Controller
+                            control={control}
+                            rules={{required: 'Jam name is required'}}
+                            render={({field: {onChange, onBlur, value}}) => (
+                                <PaperTextInput
+                                    mode="outlined"
+                                    label="Jam Name *"
+                                    placeholder="Enter jam session name"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    onBlur={onBlur}
+                                    error={!!errors.name}
+                                    left={<PaperTextInput.Icon icon="music-note" />}
+                                />
+                            )}
+                            name="name"
+                        />
+                        <HelperText type="error" visible={!!errors.name}>
+                            {errors.name?.message}
+                        </HelperText>
+                    </View>
+
+                    {/* Date & Time */}
+                    <View style={{marginBottom: 16}}>
+                        <Controller
+                            control={control}
+                            rules={{required: 'Date and time are required'}}
+                            render={({field: {value}}) => (
+                                <PaperTextInput
+                                    mode="outlined"
+                                    label="Date & Time *"
+                                    value={formatDate(value)}
+                                    editable={false}
+                                    right={
+                                        <PaperTextInput.Icon
+                                            icon="calendar"
+                                            onPress={() => setShowDatePicker(true)}
+                                        />
+                                    }
+                                    left={<PaperTextInput.Icon icon="clock-outline" />}
+                                    error={!!errors.date}
+                                />
+                            )}
+                            name="date"
+                        />
+                        <HelperText type="error" visible={!!errors.date}>
+                            {errors.date?.message}
+                        </HelperText>
+                    </View>
+
+                    {showDatePicker && (
+                        <View style={{marginBottom: 16}}>
+                            <DateTimePicker
+                                value={watchedValues.date}
+                                mode="datetime"
+                                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                                onChange={handleDateChange}
+                                minimumDate={new Date()}
+                            />
+                            <Button mode="contained"
+                                style={{marginLeft: 'auto'}} onPress={() => setShowDatePicker(false)}>Valider</Button>
+                        </View>
+                    )}
+
+                    {/* Location */}
+                    <View style={{marginBottom: 16}}>
+                        <Text variant="bodyMedium" style={{marginBottom: 8, fontWeight: '600'}}>
+                            Location *
+                        </Text>
+                        <Controller
+                            control={control}
+                            rules={{required: 'Location is required'}}
+                            render={({field: {onChange, value}}) => (
+                                <LocationTextInput
+                                    placeholder="Enter specific location/venue"
+                                    value={value}
+                                    onChangeText={onChange}
+                                    onLocationSelect={(location) => {
+                                        onChange(location.place_name);
+                                        if (location.latitude && location.longitude) {
+                                            setValue('latitude', location.latitude);
+                                            setValue('longitude', location.longitude);
+                                        }
+                                    }}
+                                    error={!!errors.location}
+                                    countryCode={osmConfig.defaultCountryCode}
+                                />
+                            )}
+                            name="location"
+                        />
+                        <HelperText type="error" visible={!!errors.location}>
+                            {errors.location?.message}
+                        </HelperText>
+                    </View>
+
+                    {/* Music Style */}
+                    <View style={{marginBottom: 16}}>
+                        <Text variant="bodyMedium" style={{marginBottom: 8, fontWeight: '600'}}>
+                            Music Style *
+                        </Text>
+                        <Controller
+                            control={control}
+                            rules={{required: 'Music style is required'}}
+                            render={({field: {onChange, value}}) => (
+                                <View style={{flexDirection: 'row', flexWrap: 'wrap', gap: 8}}>
+                                    {musicStyles.map((style) => (
+                                        <Chip
+                                            key={style}
+                                            selected={value === style}
+                                            onPress={() => onChange(style)}
+                                            mode={value === style ? 'flat' : 'outlined'}
+                                        >
+                                            {style}
+                                        </Chip>
+                                    ))}
+                                </View>
+                            )}
+                            name="style"
+                        />
+                        <HelperText type="error" visible={!!errors.style}>
+                            {errors.style?.message}
+                        </HelperText>
+                    </View>
+
+                    {/* Description */}
+                    <View style={{marginBottom: 24}}>
+                        <Controller
+                            control={control}
+                            rules={{required: 'Description is required'}}
+                            render={({field: {onChange, onBlur, value}}) => (
+                                <PaperTextInput
+                                    mode="outlined"
+                                    label="Description *"
+                                    placeholder="Describe the jam session, skill level, instruments needed, etc."
+                                    value={value}
+                                    onChangeText={onChange}
+                                    onBlur={onBlur}
+                                    multiline
+                                    numberOfLines={4}
+                                    error={!!errors.description}
+                                    left={<PaperTextInput.Icon icon="text" />}
+                                />
+                            )}
+                            name="description"
+                        />
+                        <HelperText type="error" visible={!!errors.description}>
+                            {errors.description?.message}
+                        </HelperText>
+                    </View>
+
+                    {/* Submit Button */}
+                    <Button
+                        mode="contained"
+                        onPress={handleSubmit(onSubmit)}
+                        loading={isLoading}
+                        disabled={isLoading}
+                        contentStyle={{paddingVertical: 8}}
+                    >
+                        {initialData ?
+                            (isLoading ? 'Updating Jam...' : 'Update Jam Session') :
+                            (isLoading ? 'Creating Jam...' : 'Create Jam Session')
+                        }
+                    </Button>
+                </Card>
+            </ScrollView>
+        </Surface>
     );
 }
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        padding: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        borderRadius: 10,
-    },
-    section: {
-        marginBottom: 25,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 10,
-    },
-    imageUpload: {
-        marginBottom: 10,
-    },
-    inputGroup: {
-        marginBottom: 20,
-    },
-    label: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#fff',
-        marginBottom: 8,
-    },
-    input: {
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        color: '#fff',
-    },
-    inputError: {
-        borderColor: '#ff6b6b',
-    },
-    errorText: {
-        color: '#ff6b6b',
-        fontSize: 12,
-        marginTop: 4,
-    },
-    dateButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 8,
-        padding: 12,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    },
-    dateText: {
-        fontSize: 16,
-        color: '#fff',
-        marginLeft: 10,
-    },
-    styleGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-    },
-    styleButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    },
-    styleButtonActive: {
-        backgroundColor: '#4A90E2',
-        borderColor: '#4A90E2',
-    },
-    styleButtonText: {
-        fontSize: 14,
-        color: '#fff',
-    },
-    styleButtonTextActive: {
-        color: '#fff',
-    },
-    participantContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    participantButton: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    participantInput: {
-        width: 80,
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        color: '#fff',
-        marginHorizontal: 15,
-        textAlign: 'center',
-    },
-    textArea: {
-        borderWidth: 1,
-        borderColor: 'rgba(255, 255, 255, 0.2)',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: 'rgba(255, 255, 255, 0.05)',
-        color: '#fff',
-        minHeight: 100,
-        textAlignVertical: 'top',
-    },
-    submitButton: {
-        backgroundColor: '#4A90E2',
-        borderRadius: 8,
-        padding: 16,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    submitButtonDisabled: {
-        backgroundColor: '#666',
-    },
-    submitButtonText: {
-        color: '#fff',
-        fontSize: 18,
-        fontWeight: '600',
-    },
-});       

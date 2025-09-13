@@ -1,3 +1,4 @@
+import {LocationSuggestion, NominatimService} from '@/lib/services/nominatim.service';
 import {Ionicons} from '@expo/vector-icons';
 import React, {useState} from 'react';
 import {
@@ -10,39 +11,14 @@ import {
     View,
 } from 'react-native';
 
-type LocationFeature = {
-    id: string;
-    place_name: string;
-    text: string;
-    place_type?: string[];
-    center: [number, number]; // [longitude, latitude]
-    geometry: {
-        type: string;
-        coordinates: [number, number]; // [longitude, latitude]
-    };
-    properties: {
-        address?: string;
-    };
-    context?: {
-        id: string;
-        text: string;
-        short_code?: string;
-    }[];
-};
-
-type MapboxGeocodingResponse = {
-    features: LocationFeature[];
-    type: string;
-};
-
 type LocationTextInputProps = {
     placeholder?: string;
     value?: string;
-    onLocationSelect?: (location: LocationFeature & {latitude?: number; longitude?: number;}) => void;
+    onLocationSelect?: (location: LocationSuggestion) => void;
     onChangeText?: (text: string) => void;
     style?: any;
     error?: boolean;
-    mapboxAccessToken?: string;
+    countryCode?: string; // Optional country code to limit results (e.g., 'fr', 'us')
 };
 
 export default function LocationTextInput({
@@ -52,10 +28,10 @@ export default function LocationTextInput({
     onChangeText,
     style,
     error = false,
-    mapboxAccessToken
+    countryCode
 }: LocationTextInputProps) {
     const [inputText, setInputText] = useState(value || '');
-    const [suggestions, setSuggestions] = useState<LocationFeature[]>([]);
+    const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -75,7 +51,7 @@ export default function LocationTextInput({
         };
     };
 
-    // Function to search for locations using Mapbox Geocoding API
+    // Function to search for locations using OpenStreetMap Nominatim API
     const searchLocations = async (query: string) => {
         if (query.length < 3) {
             setSuggestions([]);
@@ -83,32 +59,19 @@ export default function LocationTextInput({
             return;
         }
 
-        if (!mapboxAccessToken) {
-            console.warn('Mapbox access token not provided. Please add mapboxAccessToken prop to LocationTextInput');
-            setSuggestions([]);
-            setShowSuggestions(false);
-            return;
-        }
-
         setIsLoading(true);
         try {
-            const response = await fetch(
-                `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(
-                    query
-                )}.json?access_token=${mapboxAccessToken}&limit=10&types=poi,address,place&language=en`
-            );
+            const results = await NominatimService.searchPlaces(query, 10, countryCode);
 
-            const data: MapboxGeocodingResponse = await response.json();
-
-            if (data.features && data.features.length > 0) {
-                setSuggestions(data.features);
+            if (results && results.length > 0) {
+                setSuggestions(results);
                 setShowSuggestions(true);
             } else {
                 setSuggestions([]);
                 setShowSuggestions(false);
             }
         } catch (error) {
-            console.error('Error fetching location suggestions:', error);
+            console.error('Error fetching location suggestions from OpenStreetMap:', error);
             setSuggestions([]);
             setShowSuggestions(false);
         } finally {
@@ -130,20 +93,15 @@ export default function LocationTextInput({
         }
     };
 
-    const handleLocationSelect = async (location: LocationFeature) => {
+    const handleLocationSelect = async (location: LocationSuggestion) => {
         // Update both local state and notify parent
         setInputText(location.place_name);
         onChangeText?.(location.place_name);
         setShowSuggestions(false);
         setSuggestions([]);
 
-        const selectedLocation = {
-            ...location,
-            latitude: location.center[1], // Mapbox uses [lng, lat] format
-            longitude: location.center[0],
-        };
-
-        onLocationSelect?.(selectedLocation);
+        // Location already has latitude and longitude from Nominatim service
+        onLocationSelect?.(location);
     };
 
     const clearInput = () => {
@@ -160,7 +118,7 @@ export default function LocationTextInput({
         // }, 500); // Increased delay to allow touch events
     };
 
-    const getLocationDisplayText = (feature: LocationFeature) => {
+    const getLocationDisplayText = (feature: LocationSuggestion) => {
         // Extract main text and secondary text from the place_name
         const parts = feature.place_name.split(',');
         const mainText = feature.text || parts[0];
@@ -172,7 +130,7 @@ export default function LocationTextInput({
         };
     };
 
-    const renderSuggestion = (item: LocationFeature) => {
+    const renderSuggestion = (item: LocationSuggestion) => {
         const displayText = getLocationDisplayText(item);
 
         return (

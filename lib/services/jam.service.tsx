@@ -211,6 +211,7 @@ export const jamSessionService = {
         const {data, error} = await supabase
             .from('jam_sessions')
             .select('*')
+            .gt('date', new Date().toISOString())
             .gte('latitude', latitude - radiusKm)
             .lte('latitude', latitude + radiusKm)
             .gte('longitude', longitude - radiusKm)
