@@ -11,7 +11,14 @@ export const jamSessionService = {
     async getAllAvailableJams(date?: Date) {
         const {data, error} = await supabase
             .from('jam_sessions')
-            .select('*')
+            .select(`
+                *,
+                 jam_participants (
+                    id,
+                    user_id,
+                    joined_at
+                )
+            `)
             .gte('date', date?.toISOString() ?? new Date().toISOString())
             .order('date', {ascending: true});
 

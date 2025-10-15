@@ -1,6 +1,6 @@
 import {LocationSuggestion, NominatimService} from '@/lib/services/nominatim.service';
 import {Ionicons} from '@expo/vector-icons';
-import React, {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {
     ActivityIndicator,
     ScrollView,
@@ -18,7 +18,7 @@ type LocationTextInputProps = {
     onChangeText?: (text: string) => void;
     style?: any;
     error?: boolean;
-    countryCode?: string; // Optional country code to limit results (e.g., 'fr', 'us')
+    countryCodes?: string[]; // Changed from countryCode to countryCodes array
 };
 
 export default function LocationTextInput({
@@ -28,7 +28,7 @@ export default function LocationTextInput({
     onChangeText,
     style,
     error = false,
-    countryCode
+    countryCodes // Changed from countryCode to countryCodes
 }: LocationTextInputProps) {
     const [inputText, setInputText] = useState(value || '');
     const [suggestions, setSuggestions] = useState<LocationSuggestion[]>([]);
@@ -36,7 +36,7 @@ export default function LocationTextInput({
     const [showSuggestions, setShowSuggestions] = useState(false);
 
     // Update local state when value prop changes
-    React.useEffect(() => {
+    useEffect(() => {
         if (value !== undefined) {
             setInputText(value);
         }
@@ -61,7 +61,7 @@ export default function LocationTextInput({
 
         setIsLoading(true);
         try {
-            const results = await NominatimService.searchPlaces(query, 10, countryCode);
+            const results = await NominatimService.searchPlaces(query, 10, countryCodes);
 
             if (results && results.length > 0) {
                 setSuggestions(results);
@@ -227,7 +227,7 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: 16,
-        color: '#fff',
+        color: '#000',
         paddingVertical: 12,
     },
     clearButton: {

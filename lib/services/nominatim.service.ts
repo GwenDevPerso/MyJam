@@ -33,6 +33,7 @@ export interface NominatimFeature {
 export interface LocationSuggestion {
     id: string;
     place_name: string;
+    city: string;
     text: string;
     place_type?: string[];
     center: [number, number]; // [longitude, latitude]
@@ -60,13 +61,13 @@ export class NominatimService {
      * Search for places using Nominatim geocoding API
      * @param query Search query string
      * @param limit Maximum number of results (default: 10)
-     * @param countryCode Optional country code to limit results (e.g., 'fr', 'us')
+     * @param countryCodes Optional array of country codes to limit results (e.g., ['fr', 'es'])
      * @returns Promise with location suggestions
      */
     static async searchPlaces(
         query: string,
         limit: number = 10,
-        countryCode?: string
+        countryCodes?: string[]
     ): Promise<LocationSuggestion[]> {
         if (!query || query.length < 3) {
             return [];
@@ -82,8 +83,8 @@ export class NominatimService {
                 dedupe: '1', // Remove duplicate results
             });
 
-            if (countryCode) {
-                params.append('countrycodes', countryCode);
+            if (countryCodes && countryCodes.length > 0) {
+                params.append('countrycodes', countryCodes.join(','));
             }
 
             const response = await fetch(
@@ -101,7 +102,7 @@ export class NominatimService {
 
             const data: NominatimFeature[] = await response.json();
             
-            return data.map(this.convertToLocationSuggestion);
+            return data.map(NominatimService.convertToLocationSuggestion);
         } catch (error) {
             console.error('Error fetching location suggestions from Nominatim:', error);
             return [];
@@ -142,7 +143,7 @@ export class NominatimService {
 
             const data: NominatimFeature = await response.json();
             
-            return this.convertToLocationSuggestion(data);
+            return NominatimService.convertToLocationSuggestion(data);
         } catch (error) {
             console.error('Error reverse geocoding with Nominatim:', error);
             return null;
@@ -162,11 +163,12 @@ export class NominatimService {
         const text = displayParts[0].trim();
         
         // Determine place type based on Nominatim class and type
-        const placeType = this.getPlaceType(feature.class, feature.type);
+        const placeType = NominatimService.getPlaceType(feature.class, feature.type);
 
         return {
             id: `nominatim-${feature.place_id}`,
             place_name: feature.display_name,
+            city: feature.address?.city || '',
             text: text,
             place_type: [placeType],
             center: [longitude, latitude],
@@ -175,9 +177,9 @@ export class NominatimService {
                 coordinates: [longitude, latitude],
             },
             properties: {
-                address: feature.address ? this.formatAddress(feature.address) : undefined,
+                address: feature.address ? NominatimService.formatAddress(feature.address) : undefined,
             },
-            context: this.buildContext(feature),
+            context: NominatimService.buildContext(feature),
             latitude,
             longitude,
         };

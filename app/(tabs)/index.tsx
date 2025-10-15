@@ -5,11 +5,9 @@ import {
   Card,
   Surface,
   Text,
-  Title,
   useTheme
 } from 'react-native-paper';
 
-import {HelloWave} from '@/components/HelloWave';
 import JamItem from '@/components/JamItem';
 import Map, {MarkerType} from '@/components/Map';
 import {useAuth} from '@/contexts/AuthContext';
@@ -103,8 +101,8 @@ export default function HomeScreen() {
         </Surface>
 
         <View style={{flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16}}>
-          <Title>Welcome to My Jam !</Title>
-          <HelloWave />
+          <Text variant="titleLarge">Welcome to My Jam !</Text>
+          {/* <HelloWave /> */}
         </View>
 
         <Card style={{marginBottom: 16, padding: 16}}>

@@ -13,7 +13,6 @@ import {
   IconButton,
   Surface,
   Text,
-  Title,
   useTheme
 } from 'react-native-paper';
 
@@ -37,7 +36,6 @@ export default function ProfileScreen() {
   );
 
   const handleEdit = () => {
-    console.log('Modifier');
     router.push('/edit-profile');
   };
 
@@ -52,9 +50,9 @@ export default function ProfileScreen() {
             style={{backgroundColor: theme.colors.primary, marginBottom: 16}}
           />
           <View style={{flexDirection: 'row', alignItems: 'center', gap: 8}}>
-            <Title style={{textAlign: 'center'}}>
+            <Text variant="titleMedium" style={{textAlign: 'center'}}>
               {profile?.firstName} {profile?.lastName}
-            </Title>
+            </Text>
             <IconButton
               icon="pencil"
               size={20}

@@ -16,8 +16,8 @@ export const osmConfig = {
   nominatimUrl: 'https://nominatim.openstreetmap.org',
   // User agent required by Nominatim (identifies your app)
   userAgent: 'MyJam/1.0.0',
-  // Default country code for search filtering (optional)
-  defaultCountryCode: 'fr', // Change to your preferred default country
+  // Default country codes for search filtering (optional)
+  defaultCountryCodes: ['fr', 'es'], // France et Espagne
 };
 
 // Add other app configuration here as needed

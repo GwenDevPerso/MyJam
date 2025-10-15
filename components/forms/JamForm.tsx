@@ -16,7 +16,6 @@ import {
     Surface,
     Text
 } from 'react-native-paper';
-import {osmConfig} from '../../constants/config';
 import {JamSession} from '../../definitions/types/Jam.types';
 import LocationTextInput from '../LocationTextInput';
 
@@ -84,6 +83,8 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
             style: '',
             participants: [],
             createdBy: '',
+            latitude: undefined,
+            longitude: undefined,
         });
     };
 
@@ -197,13 +198,16 @@ export default function JamForm({onSubmit: onSubmitProp, initialData, isLoading 
                                     onChangeText={onChange}
                                     onLocationSelect={(location) => {
                                         onChange(location.place_name);
+
+                                        console.log('LOCATION', location);
+                                        setValue('city', location.city);
                                         if (location.latitude && location.longitude) {
                                             setValue('latitude', location.latitude);
                                             setValue('longitude', location.longitude);
                                         }
                                     }}
                                     error={!!errors.location}
-                                    countryCode={osmConfig.defaultCountryCode}
+                                    countryCodes={['fr', 'es']} // France et Espagne
                                 />
                             )}
                             name="location"

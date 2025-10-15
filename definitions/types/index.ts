@@ -7,7 +7,7 @@ export {MusicStyle} from './Jam.types';
 
 // Export all User Profile related types
 export type {
-    AuthUser, CreateUserProfile, Participant, UpdateUserProfile, UserProfileFormData, UserWithJamSessions
+    AuthUser, CreateUserProfile, Profile, UpdateUserProfile, UserProfileFormData, UserWithJamSessions
 } from './user.types';
 
 export {Instrument} from './user.types';

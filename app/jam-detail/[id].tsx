@@ -1,7 +1,7 @@
 import {useAuth} from '@/contexts/AuthContext';
 import {JamSession} from '@/definitions/types';
 import {jamSessionService} from '@/lib/services/jam.service';
-import {Stack, router, useLocalSearchParams} from 'expo-router';
+import {Link, Stack, router, useLocalSearchParams} from 'expo-router';
 import React, {useEffect, useState} from 'react';
 import {Alert, ScrollView, View} from 'react-native';
 import {
@@ -147,8 +147,9 @@ export default function JamDetailScreen() {
                         try {
                             await jamSessionService.delete(jamSession.id);
                             Alert.alert('Succès', 'Session supprimée avec succès', [
-                                {text: 'OK', onPress: () => router.back()}
+                                {text: 'OK', onPress: () => router.push('/')}
                             ]);
+
                         } catch (error) {
                             console.error('Error deleting jam:', error);
                             Alert.alert('Erreur', 'Impossible de supprimer la session');
@@ -205,9 +206,9 @@ export default function JamDetailScreen() {
                                 {jamSession.style}
                             </Chip>
 
-                            <Title style={{textAlign: 'center', fontSize: 24, marginBottom: 8}}>
+                            <Text variant="titleMedium" style={{textAlign: 'center', fontSize: 24, marginBottom: 8}}>
                                 {jamSession.name}
-                            </Title>
+                            </Text>
                         </Card.Content>
                     </Card>
 
@@ -260,7 +261,7 @@ export default function JamDetailScreen() {
                             {jamSession.participants.length > 0 ? (
                                 <ScrollView style={{maxHeight: 200}} showsVerticalScrollIndicator={false}>
                                     {jamSession.participants.map((participant, index) => (
-                                        <View key={index}>
+                                        <Link key={index} href={`/participant/${participant.id}`}>
                                             <View style={{flexDirection: 'row', alignItems: 'center', paddingVertical: 8, marginLeft: 32}}>
                                                 <Avatar.Icon
                                                     size={40}
@@ -282,7 +283,7 @@ export default function JamDetailScreen() {
                                                 )}
                                             </View>
                                             {index < jamSession.participants.length - 1 && <Divider style={{marginLeft: 32}} />}
-                                        </View>
+                                        </Link>
                                     ))}
                                 </ScrollView>
                             ) : (

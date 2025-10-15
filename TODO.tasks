@@ -7,10 +7,12 @@ TODO:
   ✔ -> update @done(25-08-10 11:50)
   ✔ -> delete @done(25-07-21 18:43)
 ☐ map
-☐ skeleton loader
+✔ skeleton loader @done(25-09-29 15:12)
 ✔ date add jam ne marche pas @done(25-07-21 18:44)
 ✔ refresh les data a quand on add ou quand on rej une jam @done(25-08-10 11:50)
-☐ ajouter un store redux pour les jams
-☐ autocomplete location
 
 ☐ map : coordonnées doivent find tout les jams dans la zone
+☐ ajouter des amis
+☐ notifications
+☐ paiement
+☐ creer une jam redondante

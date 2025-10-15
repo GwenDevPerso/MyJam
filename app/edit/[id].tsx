@@ -4,7 +4,6 @@ import {Surface, Text} from 'react-native-paper';
 import JamForm, {JamFormInputs} from '@/components/forms/JamForm';
 import {JamSession} from '@/definitions/types';
 import {JamSessionUpdate} from '@/lib/database.types';
-import {LocationHelper} from '@/lib/helpers/location.helper';
 import {jamSessionService} from '@/lib/services/jam.service';
 import {router, Stack, useFocusEffect, useLocalSearchParams} from 'expo-router';
 import {useCallback, useState} from 'react';
@@ -17,20 +16,19 @@ export default function EditScreen() {
     const editJam = async (jamData: JamFormInputs) => {
         setLoading(true);
         try {
-            const coordinates = await LocationHelper.getCoordinatesFromAddress(jamData.location);
-            const address = await LocationHelper.getAddressFromCoordinates(coordinates.latitude, coordinates.longitude);
-
             const jamInput: JamSessionUpdate = {
                 id: Number(id),
                 name: jamData.name,
                 date: jamData.date.toISOString(),
-                city: address.city || 'Unknown',
+                city: jamData.city,
                 location: jamData.location,
                 description: jamData.description,
                 style: jamData.style,
-                latitude: coordinates.latitude,
-                longitude: coordinates.longitude,
+                latitude: jamData.latitude,
+                longitude: jamData.longitude,
             };
+
+            console.log('JAM INPUT', jamInput);
 
             await jamSessionService.update(Number(id), jamInput);
 

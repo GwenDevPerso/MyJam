@@ -79,7 +79,7 @@ export default function JamItem({jam}: {jam: JamSession;}) {
                         {jam.style}
                     </Chip>
                     <Text variant="bodySmall" style={{color: theme.colors.onSurfaceVariant}}>
-                        Inscrits : -
+                        Plus d&apos;infos ...
                     </Text>
                 </View>
             </Card.Content>

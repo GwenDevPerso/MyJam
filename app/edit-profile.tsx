@@ -271,7 +271,6 @@ export default function EditProfileScreen() {
                                 loading={loading}
                                 disabled={loading}
                                 style={{flex: 1}}
-                                contentStyle={{paddingVertical: 8}}
                             >
                                 Sauvegarder
                             </Button>
